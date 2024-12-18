@@ -1,2 +1,1 @@
-# npDRDeriv
-Nonparametric Doubly Robust Inference on Dose-Response Curve and its Derivative
+# Nonparametric Doubly Robust Inference on Derivative of Dose-Response Curve
