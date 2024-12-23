@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 
 # Author: Yikun Zhang
-# Last Editing: Nov 12, 2024
+# Last Editing: Dec 22, 2024
 
 # Description: This script contains the implementations of the IPW and doubly 
-# robust estimators of the derivative of a dose-response curve under the 
-# positivity condition.
+# robust estimators of the derivative of a dose-response curve with and without 
+# the positivity condition.
 
 import numpy as np
 from rbf import KernelRetrieval
-from utils1 import BndKern, CondDenEst, CondDenEstKDE
+from utils1 import CondDenEst, CondDenEstKDE, KDE
 from sklearn.model_selection import KFold
 from sklearn.base import BaseEstimator
 
@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 #=======================================================================================#
-
+# With the positivity condition
 
 ## Define the neural network
 class NeurNet(nn.Module):
@@ -166,7 +166,7 @@ def RADRDerivSKLearn(Y, X, t_eval, mu, L=1, delta=0.01):
 
 
 def IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None,
-               self_norm=True, bnd_cor=True):
+               self_norm=True):
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -184,30 +184,9 @@ def IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=No
         beta_hat = np.zeros((n, t_eval.shape[0]))
         norm_w = np.zeros((t_eval.shape[0],))
         for i in range(t_eval.shape[0]):
-            if bnd_cor:
-                if t_eval[i] < np.min(X[:,0]) or t_eval[i] > np.max(X[:,0]):
-                    beta_hat[:,i] = 0
-                    norm_w[i] = 1
-                elif t_eval[i] < np.min(X[:,0]) + h:
-                    alpha = (t_eval[i] - np.min(X[:,0]))/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='left')
-                    # Self-normalizing weights
-                    norm_w[i] = np.sum(bndkern / condTS_est) / h
-                    beta_hat[:,i] = ((X[:,0] - t_eval[i])/h) * bndkern * Y / (h**2 * condTS_est)
-                elif t_eval[i] > np.max(X[:,0]) - h:
-                    alpha = (np.max(X[:,0]) - t_eval[i])/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='right')
-                    # Self-normalizing weights
-                    norm_w[i] = np.sum(bndkern / condTS_est) / h
-                    beta_hat[:,i] = ((X[:,0] - t_eval[i])/h) * bndkern * Y / (h**2 * condTS_est)
-                else:
-                    # Self-normalizing weights
-                    norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / h
-                    beta_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * Y / (h**2 * sigmaK_sq * condTS_est)
-            else:
-                # Self-normalizing weights
-                norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / h
-                beta_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * Y / (h**2 * sigmaK_sq * condTS_est)
+            # Self-normalizing weights
+            norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / h
+            beta_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * Y / (h**2 * sigmaK_sq * condTS_est)
 
         if self_norm:
             theta_est = np.sum(beta_hat, axis=0) / norm_w
@@ -234,42 +213,11 @@ def IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=No
                                         y_eval=X_te[:,0], x_eval=X_te[:,1:], kern='gaussian', b=b)
             condTS_est[condTS_est < tau] = tau
             for i in range(t_eval.shape[0]):
-                if bnd_cor:
-                    if t_eval[i] < np.min(X[te_ind,0]) or t_eval[i] > np.max(X[te_ind,0]):
-                        beta_hat[te_ind,i] = 0
-                    elif t_eval[i] < np.min(X[te_ind,0]) + h:
-                        alpha = (t_eval[i] - np.min(X[te_ind,0]))/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=1, 
-                                          alpha=alpha, bnd='left')
-                        # Self-normalizing weights
-                        w = np.sum(bndkern / condTS_est) / h
-                        if ~np.isnan(w) and w != np.inf:
-                            norm_w[i] = norm_w[i] + w
-                            beta_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * bndkern * Y_te / (condTS_est * h**2)
-                        else:
-                            beta_hat[te_ind,i] = 0
-                    elif t_eval[i] > np.max(X[te_ind,0]) - h:
-                        alpha = (np.max(X[te_ind,0]) - t_eval[i])/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=1, 
-                                          alpha=alpha, bnd='right')
-                        # Self-normalizing weights
-                        w = np.sum(bndkern / condTS_est) / h
-                        if ~np.isnan(w) and w != np.inf:
-                            norm_w[i] = norm_w[i] + w
-                            beta_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * bndkern * Y_te / (condTS_est * h**2)
-                        else:
-                            beta_hat[te_ind,i] = 0
-                    else:
-                        w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / h
-                        if ~np.isnan(w) and w != np.inf:
-                            norm_w[i] = norm_w[i] + w
-                        beta_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * Y_te / (condTS_est * sigmaK_sq * h**2)
-                else:
-                    # Self-normalizing weights
-                    w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / h
-                    if ~np.isnan(w) and w != np.inf:
-                        norm_w[i] = norm_w[i] + w
-                    beta_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * Y_te / (h**2 * sigmaK_sq * condTS_est)
+                # Self-normalizing weights
+                w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / h
+                if ~np.isnan(w) and w != np.inf:
+                    norm_w[i] = norm_w[i] + w
+                beta_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * Y_te / (h**2 * sigmaK_sq * condTS_est)
 
         if self_norm:
             norm_w[norm_w == 0] = 1
@@ -280,7 +228,7 @@ def IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=No
 
 
 def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, n_iter=1000, lr=0.1, 
-              tau=0.01, b=None, bnd_cor=True):
+              tau=0.01, b=None, self_norm=True):
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -299,10 +247,10 @@ def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, n_iter=1000
         X_tensor = torch.from_numpy(X)
         Y_tensor = torch.from_numpy(Y.reshape(-1,1))
         NN_fit = train(mu, X_tensor, Y_tensor, lr=lr, n_epochs=n_iter)
-        theta_hat = np.zeros((n, t_eval.shape[0]))
         mu_hat = np.zeros((n, t_eval.shape[0]))
         IPW_hat = np.zeros((n, t_eval.shape[0]))
         beta_hat = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
         for i in range(t_eval.shape[0]):
             # Define the data matrix for evaluating the fitted regression model
             X_eval = np.column_stack([t_eval[i]*np.ones(n), X[:,1:]])
@@ -320,26 +268,15 @@ def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, n_iter=1000
             mu_pred = NN_fit(X_eval_tensor)
             mu_hat[:,i] = mu_pred.detach().numpy()[:,0]
             
-            if bnd_cor:
-                if t_eval[i] < np.min(X[:,0]) or t_eval[i] > np.max(X[:,0]):
-                    IPW_hat[:,i] = 0
-                elif t_eval[i] < np.min(X[:,0]) + h:
-                    alpha = (t_eval[i] - np.min(X[:,0]))/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='left')
-                    IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * bndkern * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * condTS_est)
-                elif t_eval[i] > np.max(X[:,0]) - h:
-                    alpha = (np.max(X[:,0]) - t_eval[i])/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='right')
-                    IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * bndkern * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * condTS_est)
-                else:
-                    IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * sigmaK_sq * condTS_est)
-            else:
-                IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * sigmaK_sq * condTS_est)
-            
-            # Add up the IPW and RA components
-            theta_hat[:,i] = IPW_hat[:,i] + beta_hat[:,i]
-
-        theta_est = np.mean(theta_hat, axis=0)
+            IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * sigmaK_sq * condTS_est)
+            # Self-normalizing weights
+            norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / (n * h)
+        
+        if self_norm:
+            IPW_hat = IPW_hat / norm_w
+        # Add up the IPW and RA components
+        theta_hat = IPW_hat + beta_hat
+        theta_est = np.mean(theta_hat, axis=0, where=~np.isnan(theta_hat))
         
         # Estimate the variance of theta(t) using the square of the influence function
         var_est = np.zeros((n, t_eval.shape[0]))
@@ -350,10 +287,10 @@ def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, n_iter=1000
         # Conduct L-fold cross-fittings: fit the reciprocal of the conditional model 
         # and the regression model on the training fold data and evaluate it on the test fold data
         kf = KFold(n_splits=L, shuffle=True, random_state=0)
-        theta_hat = np.zeros((n, t_eval.shape[0]))
         mu_hat = np.zeros((n, t_eval.shape[0]))
         beta_hat = np.zeros((n, t_eval.shape[0]))
         IPW_hat = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
         cond_est_full = np.zeros((n,))
         for tr_ind, te_ind in kf.split(X):
             X_tr = X[tr_ind,:]
@@ -393,26 +330,17 @@ def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, n_iter=1000
                 mu_pred = NN_fit(X_eval_te_tensor)
                 mu_hat[te_ind,i] = mu_pred.detach().numpy()[:,0]
                 
-                if bnd_cor:
-                    if t_eval[i] < np.min(X[te_ind,0]) or t_eval[i] > np.max(X[te_ind,0]):
-                        IPW_hat[te_ind,i] = 0
-                    elif t_eval[i] < np.min(X[te_ind,0]) + h:
-                        alpha = (t_eval[i] - np.min(X[te_ind,0]))/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='left')
-                        IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * bndkern * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * condTS_est)
-                    elif t_eval[i] > np.max(X[te_ind,0]) - h:
-                        alpha = (np.max(X[te_ind,0]) - t_eval[i])/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='right')
-                        IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * bndkern * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * condTS_est)
-                    else:
-                        IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * sigmaK_sq * condTS_est)
-                else:
-                    IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * sigmaK_sq * condTS_est) 
-                    
-                # Add up the IPW and RA components
-                theta_hat[te_ind,i] = IPW_hat[te_ind,i] + beta_hat[te_ind,i]
-
-        theta_est = np.mean(theta_hat, axis=0)
+                IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * sigmaK_sq * condTS_est) 
+                
+                # Self-normalizing weights
+                w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / (n * h)
+                norm_w[i] = norm_w[i] + w
+        
+        if self_norm:
+            IPW_hat = IPW_hat / norm_w
+        # Add up the IPW and RA components
+        theta_hat = IPW_hat + beta_hat
+        theta_est = np.mean(theta_hat, axis=0, where=~np.isnan(theta_hat))
         
         # Estimate the variance of theta(t) using the square of the influence function
         var_est = np.zeros((n, t_eval.shape[0]))
@@ -424,7 +352,7 @@ def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, n_iter=1000
 
 
 def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, 
-                     b=None, bnd_cor=False, delta=0.01):
+                     b=None, delta=0.01, self_norm=True):
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -442,11 +370,11 @@ def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=
         
         mu_fit = mu.fit(X, Y)
         
-        theta_hat = np.zeros((n, t_eval.shape[0]))
         mu_hat = np.zeros((n, t_eval.shape[0]))
         IPW_hat = np.zeros((n, t_eval.shape[0]))
         t_new = np.linspace(np.min(t_eval)-delta, np.max(t_eval)+delta, t_eval.shape[0]+1)
         beta_hat = np.zeros((n, t_new.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
         for i in range(t_new.shape[0]):
             X_new = np.column_stack([t_new[i]*np.ones(n), X[:,1:]])
             beta_hat[:,i] = mu_fit.predict(X_new)
@@ -456,26 +384,15 @@ def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=
             X_eval = np.column_stack([t_eval[i]*np.ones(n), X[:,1:]])
             mu_hat[:,i] = mu_fit.predict(X_eval)
             
-            if bnd_cor:
-                if t_eval[i] < np.min(X[:,0]) or t_eval[i] > np.max(X[:,0]):
-                    IPW_hat[:,i] = 0
-                elif t_eval[i] < np.min(X[:,0]) + h:
-                    alpha = (t_eval[i] - np.min(X[:,0]))/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='left')
-                    IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * bndkern * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * condTS_est)
-                elif t_eval[i] > np.max(X[:,0]) - h:
-                    alpha = (np.max(X[:,0]) - t_eval[i])/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='right')
-                    IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * bndkern * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * condTS_est)
-                else:
-                    IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * sigmaK_sq * condTS_est)
-            else:
-                IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * sigmaK_sq * condTS_est)
-            
-            # Add up the IPW and RA components
-            theta_hat[:,i] = IPW_hat[:,i] + beta_hat[:,i]
+            IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) / (h**2 * sigmaK_sq * condTS_est)
+            # Self-normalizing weights
+            norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / (n * h)
 
-        theta_est = np.mean(theta_hat, axis=0)
+        if self_norm:
+            IPW_hat = IPW_hat / norm_w
+        # Add up the IPW and RA components
+        theta_hat = IPW_hat + beta_hat
+        theta_est = np.mean(theta_hat, axis=0, where=~np.isnan(theta_hat))
         
         # Estimate the variance of theta(t) using the square of the influence function
         var_est = np.zeros((n, t_eval.shape[0]))
@@ -486,13 +403,13 @@ def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=
         # Conduct L-fold cross-fittings: fit the reciprocal of the conditional model 
         # and the regression model on the training fold data and evaluate it on the test fold data
         kf = KFold(n_splits=L, shuffle=True, random_state=0)
-        theta_hat = np.zeros((n, t_eval.shape[0]))
         mu_hat = np.zeros((n, t_eval.shape[0]))
         beta_hat = np.zeros((n, t_eval.shape[0]))
         
         t_new = np.linspace(np.min(t_eval)-delta, np.max(t_eval)+delta, t_eval.shape[0]+1)
         beta_can = np.zeros((n, t_new.shape[0]))
         IPW_hat = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
         cond_est_full = np.zeros((n,))
         for tr_ind, te_ind in kf.split(X):
             X_tr = X[tr_ind,:]
@@ -522,26 +439,17 @@ def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=
                 X_eval_te = np.column_stack([t_eval[i]*np.ones(X_te.shape[0]), X_te[:,1:]])
                 mu_hat[te_ind,i] = mu_fit.predict(X_eval_te)
                 
-                if bnd_cor:
-                    if t_eval[i] < np.min(X[te_ind,0]) or t_eval[i] > np.max(X[te_ind,0]):
-                        IPW_hat[te_ind,i] = 0
-                    elif t_eval[i] < np.min(X[te_ind,0]) + h:
-                        alpha = (t_eval[i] - np.min(X[te_ind,0]))/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='left')
-                        IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * bndkern * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * condTS_est)
-                    elif t_eval[i] > np.max(X[te_ind,0]) - h:
-                        alpha = (np.max(X[te_ind,0]) - t_eval[i])/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=1, alpha=alpha, bnd='right')
-                        IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * bndkern * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * condTS_est)
-                    else:
-                        IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * sigmaK_sq * condTS_est)
-                else:
-                    IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * sigmaK_sq * condTS_est) 
+                IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) / (h**2 * sigmaK_sq * condTS_est) 
                     
-                # Add up the IPW and RA components
-                theta_hat[te_ind,i] = IPW_hat[te_ind,i] + beta_hat[te_ind,i]
+                # Self-normalizing weights
+                w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / (n * h)
+                norm_w[i] = norm_w[i] + w
 
-        theta_est = np.mean(theta_hat, axis=0)
+        if self_norm:
+            IPW_hat = IPW_hat / norm_w
+        # Add up the IPW and RA components
+        theta_hat = IPW_hat + beta_hat
+        theta_est = np.mean(theta_hat, axis=0, where=~np.isnan(theta_hat))
         
         # Estimate the variance of theta(t) using the square of the influence function
         var_est = np.zeros((n, t_eval.shape[0]))
@@ -553,7 +461,7 @@ def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=
 
 def DRDerivCurve(Y, X, t_eval=None, est="RA", beta_mod=None, n_iter=1000, lr=0.1, 
                  condTS_type=None, condTS_mod=None, tau=0.01, L=1, h=None, kern="epanechnikov", 
-                 h_cond=None, print_bw=True, delta=0.01, self_norm=True, bnd_cor=False):
+                 h_cond=None, print_bw=True, delta=0.01, self_norm=True):
     '''
     Dose-response curve derivative estimation under the positivity condition.
     
@@ -614,12 +522,290 @@ def DRDerivCurve(Y, X, t_eval=None, est="RA", beta_mod=None, n_iter=1000, lr=0.1
             theta_est = RADRDeriv(Y, X, t_eval, beta_mod, L, n_iter, lr)
     elif est == "IPW":
         theta_est = IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau, h_cond, 
-                               self_norm, bnd_cor)
+                               self_norm)
     elif isinstance(beta_mod, BaseEstimator):
         theta_est = DRDRDerivSKLearn(Y, X, t_eval, beta_mod, condTS_type, condTS_mod, L, h, kern, 
-                                     tau, h_cond, bnd_cor, delta)
+                                     tau, h_cond, delta, self_norm)
     else:
         theta_est = DRDRDeriv(Y, X, t_eval, beta_mod, condTS_type, condTS_mod, L, h, kern, n_iter, lr, 
-                              tau, h_cond, bnd_cor)
+                              tau, h_cond, self_norm)
     
     return theta_est
+
+
+
+#=======================================================================================#
+# Without the positivity condition (work for additive confounding models)
+
+def RADRDerivBC(Y, X, t_eval, mu, L=1, n_iter=1000, lr=0.1, h_bar=None, kernT_bar="gaussian", 
+                print_bw=False):
+    n = X.shape[0]  ## Number of data points
+    if h_bar is None:
+        # Apply the Silverman's rule of thumb bandwidth in Chen et al.(2016).
+        h_bar = (4/3)**(1/5)*(n**(-1/5))*np.std(X[:,0])
+    if print_bw:
+        print("The current bandwidth for the conditional CDF estimator is "+ str(h_bar) + ".\n")
+    
+    # Compute the weight matrix for NW conditional CDF estimator
+    kernT_bar, sigmaK_sq, K_sq = KernelRetrieval(kernT_bar)
+    weight_mat = kernT_bar((t_eval - X[:,0].reshape(-1,1)) / h_bar)
+    weight_mat = weight_mat / np.sum(weight_mat, axis=0)
+    weight_mat[np.isnan(weight_mat)] = 0
+    
+    if L <= 1:
+        # No cross-fittings: fit the regression model on the entire data
+        X_tensor = torch.from_numpy(X)
+        Y_tensor = torch.from_numpy(Y.reshape(-1,1))
+        NN_fit = train(mu, X_tensor, Y_tensor, lr=lr, n_epochs=n_iter)
+        beta_est = np.zeros((n, t_eval.shape[0]))
+        for i in range(t_eval.shape[0]):
+            # Define the data matrix for evaluating the fitted regression model
+            X_eval = np.column_stack([t_eval[i]*np.ones(n), X[:,1:]])
+            X_eval_tensor = torch.from_numpy(X_eval)
+            for j in range(X_eval.shape[0]):
+                # Compute the gradient of the fitted regression model with respect to the first coordinate
+                x = X_eval_tensor[j,:]
+                x = x.clone().detach().requires_grad_(True)
+                y = NN_fit(x)
+                y_scalar = y[0]
+                y_scalar.backward()
+                x_grad = x.grad
+                beta_est[j,i] = x_grad[0].item()
+            
+        theta_C = np.sum(beta_est * weight_mat, axis=0)
+    else:
+        # Conduct L-fold cross-fittings: fit the regression model on the training fold data
+        # and evaluate it on the test fold data
+        kf = KFold(n_splits=L, shuffle=True, random_state=0)
+        beta_est = np.zeros((n, t_eval.shape[0]))
+        for tr_ind, te_ind in kf.split(X):
+            X_tr = X[tr_ind,:]
+            Y_tr = Y[tr_ind]
+            X_te = X[te_ind,:]
+            
+            X_tr_tensor = torch.from_numpy(X_tr)
+            Y_tr_tensor = torch.from_numpy(Y_tr.reshape(-1,1))
+            NN_fit = train(mu, X_tr_tensor, Y_tr_tensor, lr=lr, n_epochs=n_iter)
+            for i in range(t_eval.shape[0]):
+                # Define the data matrix for evaluating the fitted regression model
+                X_eval_te = np.column_stack([t_eval[i]*np.ones(X_te.shape[0]), X_te[:,1:]])
+                X_eval_te_tensor = torch.from_numpy(X_eval_te)
+                beta_hat = np.zeros((X_eval_te.shape[0],))
+                for j in range(X_eval_te.shape[0]):
+                    # Compute the gradient of the fitted regression model with respect to the first coordinate
+                    x = X_eval_te_tensor[j,:]
+                    x = x.clone().detach().requires_grad_(True)
+                    y = NN_fit(x)
+                    y_scalar = y[0]
+                    y_scalar.backward()
+                    x_grad = x.grad
+                    beta_hat[j] = x_grad[0].item()
+                beta_est[te_ind,i] = beta_hat
+                    
+        theta_C = np.sum(beta_est * weight_mat, axis=0)
+    return theta_C
+
+
+def IPWDRDerivBC(Y, X, t_eval, L, h=None, kern="epanechnikov", b=None, self_norm=True, 
+                 thres_val=0.75):
+    kern_type = kern
+    kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
+    n = X.shape[0]  ## Number of data points
+    if h is None:
+        # Apply Silverman's rule of thumb to select the bandwidth parameter
+        h = (4/3)**(1/5)*(n**(-1/5))*np.std(X[:,0])
+        print("The current bandwidth is "+ str(h) + ".\n")
+        
+    if L <= 1:
+        # No cross-fittings: fit the density models on the entire data
+        kde_joint = KDE(X, data=X, kern='gaussian', h=b)
+        
+        beta_hat = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
+        condST_full = np.zeros((n, t_eval.shape[0]))
+        for i in range(t_eval.shape[0]):
+            # Define the data matrix for evaluating the interior densities
+            X_eval = np.column_stack([t_eval[i]*np.ones(n), X[:,1:]])
+            new_joint = KDE(X_eval, data=X, kern=kern_type, h=b)
+            t_den = KDE(t_eval[i], data=X[:,0], kern=kern_type, h=b)[0]
+            condST_den = new_joint / t_den
+            condST_full[:,i] = condST_den
+            # condST_den = condST_den * (condST_den >= np.quantile(condST_den, thres_val)) / (1 - thres_val)
+            trunc_perc = np.mean(condST_den >= thres_val * np.max(condST_den))
+            condST_den = condST_den * (condST_den >= thres_val * np.max(condST_den)) / (1 - trunc_perc)
+            den_fac = condST_den / kde_joint
+            
+            # Self-normalizing weights
+            norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) * den_fac) / h
+            beta_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * Y * den_fac/ (h**2 * sigmaK_sq)
+
+        if self_norm:
+            theta_est = np.sum(beta_hat, axis=0) / norm_w
+        else:
+            theta_est = np.mean(beta_hat, axis=0)
+    else:
+        # Conduct L-fold cross-fittings: fit the conditional density model on the training fold 
+        # data and evaluate it on the test fold data
+        kf = KFold(n_splits=L, shuffle=True, random_state=0)
+        beta_hat = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
+        condST_full = np.zeros((n, t_eval.shape[0]))
+        for tr_ind, te_ind in kf.split(X):
+            X_tr = X[tr_ind,:]
+            X_te = X[te_ind,:]
+            Y_te = Y[te_ind]
+            
+            kde_joint = KDE(X_te, data=X_tr, kern='gaussian', h=b)
+            for i in range(t_eval.shape[0]):
+                # Define the data matrix for evaluating the interior densities
+                X_eval_te = np.column_stack([t_eval[i]*np.ones(X_te.shape[0]), X_te[:,1:]])
+                new_joint = KDE(X_eval_te, data=X_tr, kern='gaussian', h=b)
+                t_den = KDE(t_eval[i], data=X_tr[:,0], kern='gaussian', h=b)[0]
+                condST_den = new_joint / t_den
+                condST_full[te_ind,i] = condST_den
+                # condST_den = condST_den * (condST_den >= np.quantile(condST_den, thres_val)) / (1 - thres_val)
+                trunc_perc = np.mean(condST_den >= thres_val * np.max(condST_den))
+                condST_den = condST_den * (condST_den >= thres_val * np.max(condST_den)) / (1 - trunc_perc)
+                den_fac = condST_den / kde_joint
+                # Self-normalizing weights
+                w = np.sum(kern((t_eval[i] - X_te[:,0])/h) * den_fac) / h
+                if ~np.isnan(w) and w != np.inf:
+                    norm_w[i] = norm_w[i] + w
+                beta_hat[te_ind,i] = ((X_te[:,0] - t_eval[i])/h) * kern((t_eval[i] - X_te[:,0])/h) * Y_te * den_fac / (h**2 * sigmaK_sq)
+
+        if self_norm:
+            norm_w[norm_w == 0] = 1
+            theta_est = np.sum(beta_hat, axis=0) / norm_w
+        else:
+            theta_est = np.mean(beta_hat, axis=0)
+    return theta_est, condST_full
+
+
+def DRDRDerivBC(Y, X, t_eval, mu, L, h=None, kern="epanechnikov", n_iter=1000, lr=0.1, 
+                b=None, thres_val=0.75, self_norm=True):
+    kern_type = kern
+    kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
+    n = X.shape[0]  ## Number of data points
+    if h is None:
+        # Apply Silverman's rule of thumb to select the bandwidth parameter
+        h = (4/3)**(1/5)*(n**(-1/5))*np.std(X[:,0])
+        print("The current bandwidth is "+ str(h) + ".\n")
+        
+    if L <= 1:
+        # No cross-fittings: fit the density and regression model on the entire data
+        kde_joint = KDE(X, data=X, kern='gaussian', h=b)
+        
+        X_tensor = torch.from_numpy(X)
+        Y_tensor = torch.from_numpy(Y.reshape(-1,1))
+        NN_fit = train(mu, X_tensor, Y_tensor, lr=lr, n_epochs=n_iter)
+        mu_hat = np.zeros((n, t_eval.shape[0]))
+        IPW_hat = np.zeros((n, t_eval.shape[0]))
+        beta_hat = np.zeros((n, t_eval.shape[0]))
+        condST_int = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
+        for i in range(t_eval.shape[0]):
+            # Define the data matrix for evaluating the interior densities and fitted regression model
+            X_eval = np.column_stack([t_eval[i]*np.ones(n), X[:,1:]])
+            new_joint = KDE(X_eval, data=X, kern=kern_type, h=b)
+            t_den = KDE(t_eval[i], data=X[:,0], kern=kern_type, h=b)[0]
+            condST_den = new_joint / t_den
+            # condST_den = condST_den * (condST_den >= np.quantile(condST_den, thres_val)) / (1 - thres_val)
+            trunc_perc = np.mean(condST_den >= thres_val * np.max(condST_den))
+            condST_den = condST_den * (condST_den >= thres_val * np.max(condST_den)) / (1 - trunc_perc)
+            den_fac = condST_den / kde_joint
+            
+            X_eval_tensor = torch.from_numpy(X_eval)
+            for j in range(X_eval.shape[0]):
+                # Compute the gradient of the fitted regression model with respect to the first coordinate
+                x = X_eval_tensor[j,:]
+                x = x.clone().detach().requires_grad_(True)
+                y = NN_fit(x)
+                y_scalar = y[0]
+                y_scalar.backward()
+                x_grad = x.grad
+                beta_hat[j,i] = x_grad[0].item()
+            NN_fit.eval()
+            mu_pred = NN_fit(X_eval_tensor)
+            mu_hat[:,i] = mu_pred.detach().numpy()[:,0]
+            
+            IPW_hat[:,i] = ((X[:,0] - t_eval[i])/h) * kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i] - (X[:,0] - t_eval[i])*beta_hat[:,i]) * den_fac/ (h**2 * sigmaK_sq)
+            
+            # Self-normalizing weights
+            norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) * den_fac) / (n * h)
+            condST_int[:,i] = condST_den
+            
+        if self_norm:
+            IPW_hat = IPW_hat / norm_w
+        # Add up the IPW and RA components
+        theta_hat = IPW_hat + beta_hat * condST_int
+        theta_est = np.mean(theta_hat, axis=0, where=~np.isnan(theta_hat))
+        
+        # Estimate the variance of theta(t) using the square of the influence function
+        var_est = np.zeros((n, t_eval.shape[0]))
+        for i in range(t_eval.shape[0]):
+            var_est[:,i] = (IPW_hat[:,i] + (np.mean(beta_hat[:,i] * condST_int[:,i]) - theta_est[i]))**2 * (h**3)
+        sd_est = np.sqrt(np.mean(var_est, axis=0)/(n*(h**3)))
+    else:
+        # Conduct L-fold cross-fittings: fit the reciprocal of the conditional model 
+        # and the regression model on the training fold data and evaluate it on the test fold data
+        kf = KFold(n_splits=L, shuffle=True, random_state=0)
+        mu_hat = np.zeros((n, t_eval.shape[0]))
+        beta_hat = np.zeros((n, t_eval.shape[0]))
+        IPW_hat = np.zeros((n, t_eval.shape[0]))
+        condST_int = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
+        for tr_ind, te_ind in kf.split(X):
+            X_tr = X[tr_ind,:]
+            Y_tr = Y[tr_ind]
+            X_te = X[te_ind,:]
+            Y_te = Y[te_ind]
+            
+            kde_joint = KDE(X_te, data=X_tr, kern='gaussian', h=b)
+            
+            X_tr_tensor = torch.from_numpy(X_tr)
+            Y_tr_tensor = torch.from_numpy(Y_tr.reshape(-1,1))
+            NN_fit = train(mu, X_tr_tensor, Y_tr_tensor, lr=lr, n_epochs=n_iter)
+            for i in range(t_eval.shape[0]):
+                # Define the data matrix for evaluating the interior densities and fitted regression model
+                X_eval_te = np.column_stack([t_eval[i]*np.ones(X_te.shape[0]), X_te[:,1:]])
+                new_joint = KDE(X_eval_te, data=X_tr, kern='gaussian', h=b)
+                t_den = KDE(t_eval[i], data=X_tr[:,0], kern='gaussian', h=b)[0]
+                condST_den = new_joint / t_den
+                # condST_den = condST_den * (condST_den >= np.quantile(condST_den, thres_val)) / (1 - thres_val)
+                trunc_perc = np.mean(condST_den >= thres_val * np.max(condST_den))
+                condST_den = condST_den * (condST_den >= thres_val * np.max(condST_den)) / (1 - trunc_perc)
+                den_fac = condST_den / kde_joint
+                
+                X_eval_te_tensor = torch.from_numpy(X_eval_te)
+                for j in range(X_eval_te.shape[0]):
+                    # Compute the gradient of the fitted regression model with respect to the first coordinate
+                    x = X_eval_te_tensor[j,:]
+                    x = x.clone().detach().requires_grad_(True)
+                    y = NN_fit(x)
+                    y_scalar = y[0]
+                    y_scalar.backward()
+                    x_grad = x.grad
+                    beta_hat[j,i] = x_grad[0].item()
+                    
+                NN_fit.eval()
+                mu_pred = NN_fit(X_eval_te_tensor)
+                mu_hat[te_ind,i] = mu_pred.detach().numpy()[:,0]
+                
+                IPW_hat[te_ind,i] = ((X[te_ind,0] - t_eval[i])/h) * kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i] - (X[te_ind,0] - t_eval[i])*beta_hat[te_ind,i]) * den_fac / (h**2 * sigmaK_sq) 
+                # Self-normalizing weights
+                w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) * den_fac) / (n * h)
+                norm_w[i] = norm_w[i] + w
+                condST_int[te_ind,i] = condST_den
+        
+        if self_norm:
+            IPW_hat = IPW_hat / norm_w
+        # Add up the IPW and RA components
+        theta_hat = IPW_hat + beta_hat * condST_int
+        theta_est = np.mean(theta_hat, axis=0, where=~np.isnan(theta_hat))
+        
+        # Estimate the variance of theta(t) using the square of the influence function
+        var_est = np.zeros((n, t_eval.shape[0]))
+        for i in range(t_eval.shape[0]):
+            var_est[:,i] = (IPW_hat[:,i] + (np.mean(beta_hat[:,i] * condST_int[:,i]) - theta_est[i]))**2 * (h**3)
+        sd_est = np.sqrt(np.mean(var_est, axis=0)/(n*(h**3)))
+    return theta_est, sd_est

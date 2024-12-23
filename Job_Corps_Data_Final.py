@@ -61,24 +61,24 @@ h1 = 223/np.std(T)
 m_est_dr1, sd_est_dr1 = DRCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="DR", 
                             mu=model_nn1, condTS_type='reg', condTS_mod=model_nn2,
                             tau=0.001, L=1, h=h1, kern="epanechnikov", h_cond=None,
-                            print_bw=False, bnd_cor=False)
+                            print_bw=False)
 
 m_est_dr5, sd_est_dr5 = DRCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="DR", 
                             mu=model_nn1, condTS_type='reg', condTS_mod=model_nn2,
                             tau=0.001, L=5, h=h1, kern="epanechnikov", h_cond=None,
-                            print_bw=False, bnd_cor=False)
+                            print_bw=False)
 
 theta_dr5, theta_sd5 = DRDerivCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="DR", 
                                 beta_mod=NeurNet, n_iter=1000, 
                                 lr=0.1, condTS_type='reg', condTS_mod=model_nn2, 
                                 tau=0.1, L=5, h=h1, kern="epanechnikov", 
-                                h_cond=None, print_bw=True, bnd_cor=False, delta=0.01)
+                                h_cond=None, print_bw=True, delta=0.01)
 
 theta_dr1, theta_sd1 = DRDerivCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="DR", 
                                 beta_mod=NeurNet, n_iter=1000, 
                                 lr=0.1, condTS_type='reg', condTS_mod=model_nn2, 
                                 tau=0.001, L=1, h=h1, kern="epanechnikov", 
-                                h_cond=None, print_bw=True, bnd_cor=False, delta=0.01)
+                                h_cond=None, print_bw=True, delta=0.01)
 
 m_est_ra5 = DRCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="RA", mu=model_nn1, 
                     L=5, h=None, kern="epanechnikov", print_bw=False)

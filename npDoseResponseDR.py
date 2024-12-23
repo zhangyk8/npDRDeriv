@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 
 # Author: Yikun Zhang
-# Last Editing: Nov 12, 2024
+# Last Editing: Dec 22, 2024
 
 # Description: This script contains the implementations of the IPW and doubly 
 # robust estimators of the dose-response curve under the positivity condition.
 
 import numpy as np
 from rbf import KernelRetrieval
-from utils1 import BndKern, CondDenEst, CondDenEstKDE
+from utils1 import CondDenEst, CondDenEstKDE
 from sklearn.model_selection import KFold
 
 #=======================================================================================#
@@ -79,7 +79,7 @@ def RegAdjustDR(Y, X, t_eval, mu, L=1, multi_boot=False, B=1000):
 
 
 def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov", tau=0.01, b=None, 
-          self_norm=True, bnd_cor=True):
+          self_norm=True):
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern_type)
     n = X.shape[0]  ## Number of data points
@@ -98,30 +98,9 @@ def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov", tau=
         m_hat = np.zeros((n, t_eval.shape[0]))
         norm_w = np.zeros((t_eval.shape[0],))
         for i in range(t_eval.shape[0]):
-            if bnd_cor:
-                if t_eval[i] < np.min(X[:,0]) or t_eval[i] > np.max(X[:,0]):
-                    m_hat[:,i] = 0
-                    norm_w[i] = 1
-                elif t_eval[i] < np.min(X[:,0]) + h:
-                    alpha = (t_eval[i] - np.min(X[:,0]))/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=0, alpha=alpha, bnd='left')
-                    # Self-normalizing weights
-                    norm_w[i] = np.sum(bndkern / condTS_est) / h
-                    m_hat[:,i] = bndkern * Y / (condTS_est * h)
-                elif t_eval[i] > np.max(X[:,0]) - h:
-                    alpha = (np.max(X[:,0]) - t_eval[i])/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=0, alpha=alpha, bnd='right')
-                    # Self-normalizing weights
-                    norm_w[i] = np.sum(bndkern / condTS_est) / h
-                    m_hat[:,i] = bndkern * Y / (condTS_est * h)
-                else:
-                    # Self-normalizing weights
-                    norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / h
-                    m_hat[:,i] = kern((t_eval[i] - X[:,0])/h) * Y / (h * condTS_est)
-            else:
-                # Self-normalizing weights
-                norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / h
-                m_hat[:,i] = kern((t_eval[i] - X[:,0])/h) * Y / (h * condTS_est)
+            # Self-normalizing weights
+            norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / h
+            m_hat[:,i] = kern((t_eval[i] - X[:,0])/h) * Y / (h * condTS_est)
 
         if self_norm:
             # Self-normalized IPW estimator
@@ -153,35 +132,10 @@ def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov", tau=
             condTS_est[condTS_est < tau] = tau
             cond_est_full[te_ind] = condTS_est
             for i in range(t_eval.shape[0]):
-                if bnd_cor:
-                    if t_eval[i] < np.min(X[te_ind,0]) or t_eval[i] > np.max(X[te_ind,0]):
-                        m_hat[te_ind,i] = 0
-                    elif t_eval[i] < np.min(X[te_ind,0]) + h:
-                        alpha = (t_eval[i] - np.min(X[te_ind,0]))/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=0, 
-                                          alpha=alpha, bnd='left')
-                        # Self-normalizing weights
-                        w = np.sum(bndkern / condTS_est) / h
-                        norm_w[i] = norm_w[i] + w
-                        m_hat[te_ind,i] = bndkern * Y_te / (condTS_est * h)
-                    elif t_eval[i] > np.max(X[te_ind,0]) - h:
-                        alpha = (np.max(X[te_ind,0]) - t_eval[i])/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=0, 
-                                          alpha=alpha, bnd='right')
-                        # Self-normalizing weights
-                        w = np.sum(bndkern / condTS_est) / h
-                        norm_w[i] = norm_w[i] + w
-                        m_hat[te_ind,i] = bndkern * Y_te / (condTS_est * h)
-                    else:
-                        w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / h
-                        if ~np.isnan(w) and w != np.inf:
-                            norm_w[i] = norm_w[i] + w
-                        m_hat[te_ind,i] = kern((t_eval[i] - X[te_ind,0])/h) * Y_te / (h * condTS_est)
-                else:
-                    # Self-normalizing weights
-                    w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / h
-                    norm_w[i] = norm_w[i] + w
-                    m_hat[te_ind,i] = kern((t_eval[i] - X[te_ind,0])/h) * Y_te / (h * condTS_est)
+                # Self-normalizing weights
+                w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / h
+                norm_w[i] = norm_w[i] + w
+                m_hat[te_ind,i] = kern((t_eval[i] - X[te_ind,0])/h) * Y_te / (h * condTS_est)
 
         if self_norm:
             norm_w[norm_w == 0] = 1
@@ -192,7 +146,7 @@ def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov", tau=
 
 
 
-def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None, bnd_cor=True):
+def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None, self_norm=True):
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -208,32 +162,21 @@ def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None
                                     x_eval=X[:,1:], kern='gaussian', b=b)
         condTS_est[condTS_est < tau] = tau
         mu_fit = mu.fit(X, Y)
-        m_hat = np.zeros((n, t_eval.shape[0]))
         mu_hat = np.zeros((n, t_eval.shape[0]))
         IPW_hat = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
         for i in range(t_eval.shape[0]):
             # Define the data matrix for evaluating the fitted regression model
             X_eval = np.column_stack([t_eval[i]*np.ones(n), X[:,1:]])
             mu_hat[:,i] = mu_fit.predict(X_eval)
-            if bnd_cor:
-                if t_eval[i] < np.min(X[:,0]) or t_eval[i] > np.max(X[:,0]):
-                    IPW_hat[:,i] = 0
-                elif t_eval[i] < np.min(X[:,0]) + h:
-                    alpha = (t_eval[i] - np.min(X[:,0]))/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=0, alpha=alpha, bnd='left')
-                    IPW_hat[:,i] = bndkern * (Y - mu_hat[:,i]) / (h * condTS_est)
-                elif t_eval[i] > np.max(X[:,0]) - h:
-                    alpha = (np.max(X[:,0]) - t_eval[i])/h
-                    bndkern = BndKern((X[:,0] - t_eval[i])/h, kern=kern, deriv_ord=0, alpha=alpha, bnd='right')
-                    IPW_hat[:,i] = bndkern * (Y - mu_hat[:,i]) / (h * condTS_est)
-                else:
-                    IPW_hat[:,i] = kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i]) / (h * condTS_est)
-            else:
-                IPW_hat[:,i] = kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i]) / (h * condTS_est)
+            IPW_hat[:,i] = kern((t_eval[i] - X[:,0])/h) * (Y - mu_hat[:,i]) / (h * condTS_est)
+            # Self-normalizing weights
+            norm_w[i] = np.sum(kern((t_eval[i] - X[:,0])/h) / condTS_est) / (n * h)
             
-            # Add up the IPW and RA components
-            m_hat[:,i] = IPW_hat[:,i] + mu_hat[:,i]
-            
+        if self_norm:
+            IPW_hat = IPW_hat / norm_w
+        # Add up the IPW and RA components
+        m_hat = IPW_hat + mu_hat
         m_est = np.mean(m_hat, axis=0, where=~np.isnan(m_hat))
         
         # Estimate the variance of m(t) using the square of the influence function
@@ -245,9 +188,9 @@ def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None
         # Conduct L-fold cross-fittings: fit the reciprocal of the conditional model 
         # and the regression model on the training fold data and evaluate it on the test fold data
         kf = KFold(n_splits=L, shuffle=True, random_state=0)
-        m_hat = np.zeros((n, t_eval.shape[0]))
         mu_hat = np.zeros((n, t_eval.shape[0]))
         IPW_hat = np.zeros((n, t_eval.shape[0]))
+        norm_w = np.zeros((t_eval.shape[0],))
         cond_est_full = np.zeros((n,))
         for tr_ind, te_ind in kf.split(X):
             X_tr = X[tr_ind,:]
@@ -269,24 +212,16 @@ def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None
             for i in range(t_eval.shape[0]):
                 X_eval_te = np.column_stack([t_eval[i]*np.ones(X_te.shape[0]), X_te[:,1:]])
                 mu_hat[te_ind,i] = mu_fit.predict(X_eval_te)
-                if bnd_cor:
-                    if t_eval[i] < np.min(X[te_ind,0]) or t_eval[i] > np.max(X[te_ind,0]):
-                        IPW_hat[te_ind,i] = 0
-                    elif t_eval[i] < np.min(X[te_ind,0]) + h:
-                        alpha = (t_eval[i] - np.min(X[te_ind,0]))/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=0, alpha=alpha, bnd='left')
-                        IPW_hat[te_ind,i] = bndkern * (Y_te - mu_hat[te_ind,i]) / (condTS_est * h)
-                    elif t_eval[i] > np.max(X[te_ind,0]) - h:
-                        alpha = (np.max(X[te_ind,0]) - t_eval[i])/h
-                        bndkern = BndKern((X[te_ind,0] - t_eval[i])/h, kern=kern, deriv_ord=0, alpha=alpha, bnd='right')
-                        IPW_hat[te_ind,i] = bndkern * (Y_te - mu_hat[te_ind,i]) / (condTS_est * h)
-                    else:
-                        IPW_hat[te_ind,i] = kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i]) / (h * condTS_est)
-                else:
-                    IPW_hat[te_ind,i] = kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i]) / (h * condTS_est)
-                        
-                # Add up the IPW and RA components
-                m_hat[te_ind,i] = IPW_hat[te_ind,i] + mu_hat[te_ind,i]
+                IPW_hat[te_ind,i] = kern((t_eval[i] - X[te_ind,0])/h) * (Y_te - mu_hat[te_ind,i]) / (h * condTS_est)
+                
+                # Self-normalizing weights
+                w = np.sum(kern((t_eval[i] - X[te_ind,0])/h) / condTS_est) / (n * h)
+                norm_w[i] = norm_w[i] + w
+        
+        if self_norm:
+            IPW_hat = IPW_hat / norm_w
+        # Add up the IPW and RA components
+        m_hat = IPW_hat + mu_hat
         m_est = np.mean(m_hat, axis=0, where=~np.isnan(m_hat))
         
         # Estimate the variance of m(t) using the square of the influence function
@@ -298,7 +233,7 @@ def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None
 
 
 def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=None, tau=0.01, L=1, 
-            h=None, kern="epanechnikov", h_cond=None, print_bw=True, self_norm=True, bnd_cor=False):
+            h=None, kern="epanechnikov", h_cond=None, print_bw=True, self_norm=True):
     '''
     Dose-response curve estimation under the positivity condition.
     
@@ -357,9 +292,9 @@ def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=N
         m_est = RegAdjustDR(Y, X, t_eval, mu, L)
     elif est == "IPW":
         m_est, cond_est = IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau, h_cond, 
-                                self_norm, bnd_cor)
+                                self_norm)
     else:
-        m_est = DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau, h_cond, bnd_cor)
+        m_est = DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau, h_cond, self_norm)
     
     return m_est
 
