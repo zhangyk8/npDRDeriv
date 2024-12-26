@@ -4,7 +4,7 @@
 # Last Editing: Nov 12, 2024
 
 # Description: This script contains the utility functions for the main functions 
-# in our package.
+# for implementing our proposed methods.
 
 import numpy as np
 from rbf import KernelRetrieval
@@ -18,27 +18,29 @@ def BndKern(x_qry, kern, deriv_ord=0, alpha=1, bnd='left'):
     '''
     Generalized jackknife boundary kernel.
     
-    Parameters:
+    Parameters
+    ----------
         x_qry: (m,)-array
-            The coordinates of m query points in the 1-dim Euclidean space.
+            The coordinates of m query points in the 1-dimensional Euclidean space.
        
         kern: python function
             The kernel function.
             
         deriv_ord: int
             The order of the derivative estimator. (Default: deriv_ord=0, which
-            is for density or nonparametric curve estimation.)
+            is for nonparametric density or curve estimation.)
         
         alpha: float
-            The truncated point of the kernel support (0 <= alpha <= 1). (Default: 
-            alpha=1, which recovers the original kernel function for interior
-            points.)
+            The truncated proportion of the kernel support (0 <= alpha <= 1). 
+            (Default: alpha=1, which recovers the original kernel function for 
+             the interior points.)
         
         bnd: str
             Indicator of whether the input point is within the left or right 
-            boundary. (Default: bnd='left'.)
+            boundary of the support. (Default: bnd='left'.)
     
-    Return:
+    Return
+    ----------
         res: (m,)-array
             The boundary kernel function evaluated at m query points.
     '''
@@ -64,10 +66,11 @@ def BndKern(x_qry, kern, deriv_ord=0, alpha=1, bnd='left'):
 
 def KDE1D(x, data, kern='epanechnikov', h=None):
     '''
-    1-dim kernel density estimation with generalized jackknife boundary
+    One-dimensional kernel density estimation with generalized jackknife boundary
     corrections (Jones 1993).
     
-    Parameters:
+    Parameters
+    ----------
         x: (m,)-array
             The coordinates of m query points in the 1-dim Euclidean space.
     
@@ -80,9 +83,10 @@ def KDE1D(x, data, kern='epanechnikov', h=None):
             
         h: float
             The bandwidth parameter. (Default: h=None. Then the Silverman's 
-            rule of thumb is applied. See Chen et al.(2016) for details.)
+            rule of thumb is applied; see Chen et al.(2016) for details.)
     
-    Return:
+    Return
+    ----------
         f_hat: (m,)-array
             The corresponding kernel density estimates at m query points.
     '''
@@ -114,21 +118,26 @@ def KDE1D(x, data, kern='epanechnikov', h=None):
 
 def KDE(x, data, kern='gaussian', h=None):
     '''
-    The d-dim Euclidean KDE.
+    The d-dimensional Euclidean kernel density estimator.
     
-    Parameters:
+    Parameters
+    ----------
         x: (m,d)-array
             The coordinates of m query points in the d-dim Euclidean space.
     
         data: (n,d)-array
             The coordinates of n random sample points in the d-dimensional 
             Euclidean space.
+            
+        kern: str
+            The name of the kernel function. (Default: "gaussian".)
        
         h: float
             The bandwidth parameter. (Default: h=None. Then the Silverman's 
             rule of thumb is applied. See Chen et al.(2016) for details.)
     
-    Return:
+    Return
+    ----------
         f_hat: (m,)-array
             The corresponding kernel density estimates at m query points.
     '''
@@ -154,24 +163,26 @@ def KDE(x, data, kern='gaussian', h=None):
 
 def CondDenEstKDE(Y, X, reg_mod, y_eval=None, x_eval=None, kern='epanechnikov', b=None):
     '''
-    Conditional density estimation via KDE on the residuals.
+    Conditional density estimation by applying the kernel density estimator (KDE) 
+    on the regression residuals.
     
-    Parameters:
+    Parameters
+    ----------
         Y: (n,)-array
             The outcome variables of n observations.
             
         X: (n,d)-array
             The d-dimensional covariates of n observations.
             
-        reg_mod: scikit-learn model or any python model that use ".fit()" and ".predict()"
+        reg_mod: scikit-learn model or any python model that can use ".fit()" and ".predict()"
             The conditional mean outcome (or regression) model of Y given X.
             
         y_eval: (m,)-array
-            The outcome variables on which we evaluate the estimated conditional
+            The outcome variables at which we evaluate the estimated conditional
             densities.
             
         x_eval: (m,d)-array
-            The covariates on which we evaluate the estimated conditional
+            The covariates at which we evaluate the estimated conditional
             densities.
             
         kern: str
@@ -180,7 +191,8 @@ def CondDenEstKDE(Y, X, reg_mod, y_eval=None, x_eval=None, kern='epanechnikov', 
         b: float
             The bandwidth parameter for KDE.
     
-    Return:
+    Return
+    ----------
         cond_est: (m,)-array
             The estimated conditional densities at the m query points.
     '''
@@ -199,16 +211,18 @@ def CondDenEstKDE(Y, X, reg_mod, y_eval=None, x_eval=None, kern='epanechnikov', 
 def CondDenEst(Y, X, reg_mod, y_eval=None, x_eval=None, kern='gaussian', b=None, 
                poly_ext=False):
     '''
-    Conditional density estimation via nonparametric regression on the kernelized outcomes.
+    Conditional density estimation via nonparametric regression on the kernel-smoothed 
+    outcome variables.
     
-    Parameters:
+    Parameters
+    ----------
         Y: (n,)-array
             The outcome variables of n observations.
             
         X: (n,d)-array
             The d-dimensional covariates of n observations.
             
-        reg_mod: scikit-learn model or any python model that use ".fit()" and ".predict()"
+        reg_mod: scikit-learn model or any python model that can use ".fit()" and ".predict()"
             The conditional mean outcome (or regression) model of Y given X.
             
         y_eval: (m,)-array
@@ -229,7 +243,8 @@ def CondDenEst(Y, X, reg_mod, y_eval=None, x_eval=None, kern='gaussian', b=None,
             The indicator of whether polynomial features are generated from the 
             current covariates. (Default: poly_ext=False.)
     
-    Return:
+    Return
+    ----------
         cond_est: (m,)-array
             The estimated conditional densities at the m query points.
     '''
@@ -265,4 +280,3 @@ def CondDenEst(Y, X, reg_mod, y_eval=None, x_eval=None, kern='gaussian', b=None,
     
     return cond_est
     
- 
