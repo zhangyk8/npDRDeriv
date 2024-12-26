@@ -3,8 +3,9 @@
 # Author: Yikun Zhang
 # Last Editing: Dec 22, 2024
 
-# Description: This script contains the implementations of the IPW and doubly 
-# robust estimators of the dose-response curve under the positivity condition.
+# Description: This script contains the implementations of the regression 
+# adjustment (RA), inverse probability weighting (IPW), and doubly robust (DR) 
+# estimators of the dose-response curve under the positivity condition.
 
 import numpy as np
 from rbf import KernelRetrieval
@@ -15,13 +16,13 @@ from sklearn.model_selection import KFold
 
 def RegAdjustDR(Y, X, t_eval, mu, L=1, multi_boot=False, B=1000):
     '''
-    Estimating the dose-response curve through the regression adjustment 
+    Estimating the dose-response curve through the regression adjustment
     (or G-computation) form.
     
     Parameters
     ----------
         Y: (n,)-array
-            The outcomes of n observations.
+            The outcome variables of n observations.
             
         X: (n,d+1)-array
             The first column of X is the treatment/exposure variable, while 
@@ -30,17 +31,29 @@ def RegAdjustDR(Y, X, t_eval, mu, L=1, multi_boot=False, B=1000):
         t_eval: (m,)-array
             The coordinates of the m evaluation points.
             
-        mu: scikit-learn model or any python model that use ".fit()" and ".predict()"
+        mu: scikit-learn model or any python model that can use ".fit()" and ".predict()"
             The conditional mean outcome (or regression) model of Y given X.
             
         L: int
             The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
             are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        multi_boot: boolean
+            An indicator of whether the multiplier bootstrap will be run. 
+            (Default: multi_boot=False.)
+            
+        B: int
+            The number of bootstrapping times. (Default: B=1000.)
             
     Return
     ----------
         m_est: (m,)-array
             The estimated dose-response curve evaluated at points "t_eval".
+            
+        mu_boot: (B,m)-array
+            The estimated dose-response curves on bootstrapping data evaluated
+            at points "t_eval". (Only return this quantity when "multi_boot=True".)
     '''
     n = X.shape[0]  ## Number of data points
     if L <= 1:
@@ -78,8 +91,63 @@ def RegAdjustDR(Y, X, t_eval, mu, L=1, multi_boot=False, B=1000):
         return m_est
 
 
-def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov", tau=0.01, b=None, 
-          self_norm=True):
+def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov", 
+          tau=0.001, b=None, self_norm=True):
+    '''
+    Estimating the dose-response curve through the inverse probability weighting
+    (IPW) form.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        condTS_type: str
+            Specifying the model type for estimating the conditional density of
+            the treatment variable T given the covariate vector S.
+            
+        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The regression model for estimating the conditional density of T given S.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        h: float
+            The bandwidth parameter.
+            
+        kern: str
+            The name of the kernel function. (Default: "epanechnikov".)
+            
+        tau: float
+            The threshold value that lower bounds the estimated conditional density
+            values. (Default: tau=0.001.)
+            
+        b: float
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+            
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
+            
+    Return
+    ----------
+        m_est: (m,)-array
+            The estimated dose-response curve evaluated at points "t_eval".
+            
+        cond_est_full: (n,)-array
+            The estimated conditional density function of T given S evaluated at
+            the n observed data points.
+    '''
+    
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern_type)
     n = X.shape[0]  ## Number of data points
@@ -146,7 +214,64 @@ def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov", tau=
 
 
 
-def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None, self_norm=True):
+def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern="epanechnikov", 
+         tau=0.001, b=None, self_norm=True):
+    '''
+    Estimating the dose-response curve through the doubly robust (DR) form.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        mu: scikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        condTS_type: str
+            Specifying the model type for estimating the conditional density of
+            the treatment variable T given the covariate vector S.
+            
+        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The regression model for estimating the conditional density of T given S.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            
+        h: float
+            The bandwidth parameter.
+            
+        kern: str
+            The name of the kernel function. (Default: kern="epanechnikov".)
+            
+        tau: float
+            The threshold value that lower bounds the estimated conditional density
+            values. (Default: tau=0.001.)
+            
+        b: float
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+            
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
+            
+    Return
+    ----------
+        m_est: (m,)-array
+            The estimated dose-response curve evaluated at points "t_eval".
+            
+        sd_est: (m,)-array
+            The estimated asymptotic stdndard deviation of the DR estimator 
+            evaluated at points "t_eval".
+    '''
+    
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -232,15 +357,16 @@ def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None
     return m_est, sd_est
 
 
-def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=None, tau=0.01, L=1, 
-            h=None, kern="epanechnikov", h_cond=None, print_bw=True, self_norm=True):
+def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=None, 
+            L=1, h=None, kern="epanechnikov", tau=0.001, h_cond=None, self_norm=True, 
+            print_bw=True):
     '''
     Dose-response curve estimation under the positivity condition.
     
     Parameters
     ----------
         Y: (n,)-array
-            The outcomes of n observations.
+            The outcome variables of n observations.
             
         X: (n,d+1)-array
             The first column of X is the treatment/exposure variable, while 
@@ -254,15 +380,37 @@ def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=N
             The type of the dose-response curve estimator. (Default: est="RA". 
             Other choices include "IPW" and "DR".)
             
+        mu: scikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        condTS_type: str
+            Specifying the model type for estimating the conditional density of
+            the treatment variable T given the covariate vector S.
+            
+        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The regression model for estimating the conditional density of T given S.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            
         h: float
-            The bandwidth parameter for the IPW/DR estimator.
+            The bandwidth parameter. (Default: h=None. Then the Silverman's 
+            rule of thumb is applied; see Chen et al.(2016) for details.)
             
         kern: str
-            The name of the kernel function for the IPW/DR estimator.
-            (Default: "epanechnikov".)
+            The name of the kernel function. (Default: kern="epanechnikov".)
+            
+        tau: float
+            The threshold value that lower bounds the estimated conditional density
+            values. (Default: tau=0.001.)
             
         h_cond: float
-            The bandwidth parameter for the conditional density estimator.
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+            
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
             
         print_bw: boolean
             The indicator of whether the current bandwidth parameters should be
@@ -274,8 +422,10 @@ def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=N
             The estimated dose-response curve evaluated at points "t_eval".
             
         sd_est: (m,)-array (if est="DR")
-            The estimated standard error of the DR estimator evaluated at points "t_eval".
+            The estimated asymptotic standard deviation of the DR estimator 
+            evaluated at points "t_eval".
     '''
+    
     if t_eval is None: 
         t_eval = X[:,0].copy()
     
@@ -297,6 +447,4 @@ def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=N
         m_est = DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau, h_cond, self_norm)
     
     return m_est
-
-
 
