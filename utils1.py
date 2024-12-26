@@ -186,10 +186,10 @@ def CondDenEstKDE(Y, X, reg_mod, y_eval=None, x_eval=None, kern='epanechnikov', 
             densities.
             
         kern: str
-            The name of the kernel function. (Default: "epanechnikov".)
+            The name of the kernel function. (Default: kern="epanechnikov".)
             
         b: float
-            The bandwidth parameter for KDE.
+            The bandwidth parameter for KDE. (Default: b=None.)
     
     Return
     ----------
@@ -234,7 +234,7 @@ def CondDenEst(Y, X, reg_mod, y_eval=None, x_eval=None, kern='gaussian', b=None,
             densities.
             
         kern: str
-            The name of the kernel function. (Default: "gaussian".)
+            The name of the kernel function. (Default: kern="gaussian".)
             
         b: float
             The bandwidth parameter for KDE. (Default: b=None.)
