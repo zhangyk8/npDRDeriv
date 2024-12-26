@@ -113,7 +113,7 @@ def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov",
             Specifying the model type for estimating the conditional density of
             the treatment variable T given the covariate vector S.
             
-        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+        condTS_mod: scikit-learn model or any python model that can use ".fit()" and ".predict()"
             The regression model for estimating the conditional density of T given S.
             
         L: int
@@ -125,7 +125,7 @@ def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov",
             The bandwidth parameter.
             
         kern: str
-            The name of the kernel function. (Default: "epanechnikov".)
+            The name of the kernel function. (Default: kern="epanechnikov".)
             
         tau: float
             The threshold value that lower bounds the estimated conditional density
@@ -137,6 +137,7 @@ def IPWDR(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov",
             
         self_norm: boolean
             An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
             
     Return
     ----------
@@ -238,7 +239,7 @@ def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern="epanechnikov",
             Specifying the model type for estimating the conditional density of
             the treatment variable T given the covariate vector S.
             
-        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+        condTS_mod: scikit-learn model or any python model that can use ".fit()" and ".predict()"
             The regression model for estimating the conditional density of T given S.
             
         L: int
@@ -261,6 +262,7 @@ def DRDR(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern="epanechnikov",
             
         self_norm: boolean
             An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
             
     Return
     ----------
@@ -387,7 +389,7 @@ def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=N
             Specifying the model type for estimating the conditional density of
             the treatment variable T given the covariate vector S.
             
-        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+        condTS_mod: scikit-learn model or any python model that can use ".fit()" and ".predict()"
             The regression model for estimating the conditional density of T given S.
             
         L: int
@@ -395,8 +397,9 @@ def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=N
             are applied and the regression model is fitted on the entire dataset.
             
         h: float
-            The bandwidth parameter. (Default: h=None. Then the Silverman's 
-            rule of thumb is applied; see Chen et al.(2016) for details.)
+            The bandwidth parameter for the IPW/DR estimator. (Default: h=None. 
+            Then the Silverman's rule of thumb is applied; see Chen et al.(2016) 
+            for details.)
             
         kern: str
             The name of the kernel function. (Default: kern="epanechnikov".)
@@ -411,6 +414,7 @@ def DRCurve(Y, X, t_eval=None, est="RA", mu=None, condTS_type=None, condTS_mod=N
             
         self_norm: boolean
             An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
             
         print_bw: boolean
             The indicator of whether the current bandwidth parameters should be

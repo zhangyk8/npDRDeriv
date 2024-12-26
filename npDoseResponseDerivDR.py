@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 #=======================================================================================#
-# With the positivity condition
+# Implementations of the proposed estimators that assume the positivity condition
 
 ## Define the neural network
 class NeurNet(nn.Module):
@@ -43,13 +43,51 @@ class NeurNet(nn.Module):
         return x
     
 
-def train(mod, X_train, Y_train, lr=0.1, n_epochs=10):
+def train(mod, X_train, Y_train, lr=0.01, n_epochs=10, momentum=0.7, weight_decay=0,
+          print_loss=True):
+    '''
+    Utility function for training the PyTorch neural network model via stochastic
+    gradient descent.
+    
+    Parameters
+    ----------
+        mod: python class
+            The neural network class defined by PyTorch.
+            
+        X_train: (n,d+1)-torch.Tensor
+            The first column of "X_train" is the treatment/exposure variable, 
+            while the other d columns are the confounding variables of n observations.
+            
+        Y_train: (n,)-torch.Tensor
+            The outcome variables of n observations.
+            
+        lr: float
+            The learning rate (Default: lr=0.01.)
+            
+        n_epochs: int
+            The number of training epochs. (Default: n_epochs=10.)
+            
+        momentum: float
+            The momentum factor (Default: momentum=0.7.)
+            
+        weight_decay: float
+            The weight decay (L2 penalty) (Default: weight_decay=0.)
+            
+        print_loss: boolean
+            An indicator of whether the training loss will be printed to the console.
+            
+    Return
+    ----------
+        model: python object
+            The fitted model instance of a neural network class defined by PyTorch.
+    '''
     # Initialize the model, loss function, and optimizer
     model = mod(input_size=X_train.shape[1])
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
     criterion = nn.MSELoss()    
-    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=0.7)
+    optimizer = optim.SGD(model.parameters(), lr=lr, momentum=momentum, 
+                          weight_decay=weight_decay)
     
     for epoch in range(n_epochs):
         model.train()
@@ -61,12 +99,63 @@ def train(mod, X_train, Y_train, lr=0.1, n_epochs=10):
         optimizer.zero_grad()    # Zero the gradients
         loss.backward()          # Backpropagate
         optimizer.step()         # Update weights
-        print(f'Epoch [{epoch + 1}/{n_epochs}], Loss: {loss.item():.4f}')
+        if print_loss:
+            print(f'Epoch [{epoch + 1}/{n_epochs}], Loss: {loss.item():.4f}')
         
     return model
 
 
 def RADRDeriv(Y, X, t_eval, mu, L=1, n_iter=1000, lr=0.1, multi_boot=False, B=1000):
+    '''
+    Estimating the derivative of a dose-response curve through the regression 
+    adjustment (or G-computation) form by a PyTorch neural network model under 
+    the positivity condition.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        mu: a neural network class defined by PyTorch
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        n_iter: int
+            The number of iterations or training epochs of the neural network model.
+            (Default: n_iter=1000.)
+            
+        lr: float
+            The learning rate (Default: lr=0.01.)
+            
+        multi_boot: boolean
+            An indicator of whether the multiplier bootstrap will be run. 
+            (Default: multi_boot=False.)
+            
+        B: int
+            The number of bootstrapping times. (Default: B=1000.)
+            
+    Return
+    ----------
+        theta_est: (m,)-array
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
+            
+        mu_boot: (B,m)-array
+            The estimated derivatives of the dose-response curves on bootstrapping 
+            data evaluated at points "t_eval". (Only return this quantity when 
+            "multi_boot=True".)
+    '''
     n = X.shape[0]  ## Number of data points
     if L <= 1:
         # No cross-fittings: fit the regression model on the entire data
@@ -132,6 +221,41 @@ def RADRDeriv(Y, X, t_eval, mu, L=1, n_iter=1000, lr=0.1, multi_boot=False, B=10
 
 
 def RADRDerivSKLearn(Y, X, t_eval, mu, L=1, delta=0.01):
+    '''
+    Estimating the derivative of a dose-response curve through the regression 
+    adjustment (or G-computation) form under the positivity condition.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        mu: scikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        delta: float
+            The step value for computing the finite differences (or numerical partial
+            differentiation) of the fitted regression model.
+            
+    Return
+    ----------
+        theta_est: (m,)-array
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
+    '''
+    
     n = X.shape[0]  ## Number of data points
     if L <= 1:
         # No cross-fittings: fit the regression model on the entire data
@@ -165,8 +289,60 @@ def RADRDerivSKLearn(Y, X, t_eval, mu, L=1, delta=0.01):
     return theta_est
 
 
-def IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=None,
-               self_norm=True):
+def IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern="epanechnikov", 
+               tau=0.001, b=None, self_norm=True):
+    '''
+    Estimating the derivative of a dose-response curve through the inverse 
+    probability weighting (IPW) form under the positivity condition.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        condTS_type: str
+            Specifying the model type for estimating the conditional density of
+            the treatment variable T given the covariate vector S.
+            
+        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The regression model for estimating the conditional density of T given S.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        h: float
+            The bandwidth parameter.
+            
+        kern: str
+            The name of the kernel function. (Default: kern="epanechnikov".)
+            
+        tau: float
+            The threshold value that lower bounds the estimated conditional density
+            values. (Default: tau=0.001.)
+            
+        b: float
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+            
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
+            
+    Return
+    ----------
+        theta_est: (m,)-array
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
+    '''
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -227,8 +403,74 @@ def IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau=0.01, b=No
     return theta_est
 
 
-def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, n_iter=1000, lr=0.1, 
-              tau=0.01, b=None, self_norm=True):
+def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern="epanechnikov", 
+              n_iter=1000, lr=0.01, tau=0.001, b=None, self_norm=True):
+    '''
+    Estimating the derivative of a dose-response curve through the doubly robust
+    (DR) form by a PyTorch neural network model under the positivity condition.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        mu: a neural network class defined by PyTorch
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        condTS_type: str
+            Specifying the model type for estimating the conditional density of
+            the treatment variable T given the covariate vector S.
+            
+        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The regression model for estimating the conditional density of T given S.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        h: float
+            The bandwidth parameter.
+            
+        kern: str
+            The name of the kernel function. (Default: kern="epanechnikov".)
+            
+        n_iter: int
+            The number of iterations or training epochs of the neural network model.
+            (Default: n_iter=1000.)
+            
+        lr: float
+            The learning rate (Default: lr=0.01.)
+            
+        tau: float
+            The threshold value that lower bounds the estimated conditional density
+            values. (Default: tau=0.001.)
+            
+        b: float
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+            
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
+            
+    Return
+    ----------
+        theta_est: (m,)-array
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
+            
+        sd_est: (m,)-array
+            The estimated asymptotic stdndard deviation of the DR derivative 
+            estimator evaluated at points "t_eval".
+    '''
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -351,8 +593,78 @@ def DRDRDeriv(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, n_iter=1000
 
 
 
-def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=0.01, 
-                     b=None, delta=0.01, self_norm=True):
+def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern="epanechnikov", 
+                     tau=0.001, b=None, delta=0.01, self_norm=True):
+    '''
+    Estimating the derivative of a dose-response curve through the doubly robust
+    (DR) form under the positivity condition.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        mu: scikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        condTS_type: str
+            Specifying the model type for estimating the conditional density of
+            the treatment variable T given the covariate vector S.
+            
+        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The regression model for estimating the conditional density of T given S.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        h: float
+            The bandwidth parameter.
+            
+        kern: str
+            The name of the kernel function. (Default: kern="epanechnikov".)
+            
+        n_iter: int
+            The number of iterations or training epochs of the neural network model.
+            (Default: n_iter=1000.)
+            
+        lr: float
+            The learning rate (Default: lr=0.01.)
+            
+        tau: float
+            The threshold value that lower bounds the estimated conditional density
+            values. (Default: tau=0.001.)
+            
+        b: float
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+        
+        delta: float
+            The step value for computing the finite differences (or numerical partial
+            differentiation) of the fitted regression model.
+        
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
+            
+    Return
+    ----------
+        theta_est: (m,)-array
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
+            
+        sd_est: (m,)-array
+            The estimated asymptotic stdndard deviation of the DR derivative 
+            estimator evaluated at points "t_eval".
+    '''
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -459,16 +771,16 @@ def DRDRDerivSKLearn(Y, X, t_eval, mu, condTS_type, condTS_mod, L, h, kern, tau=
     return theta_est, sd_est
 
 
-def DRDerivCurve(Y, X, t_eval=None, est="RA", beta_mod=None, n_iter=1000, lr=0.1, 
-                 condTS_type=None, condTS_mod=None, tau=0.01, L=1, h=None, kern="epanechnikov", 
-                 h_cond=None, print_bw=True, delta=0.01, self_norm=True):
+def DRDerivCurve(Y, X, t_eval=None, est="RA", beta_mod=None, n_iter=1000, lr=0.01, 
+                 condTS_type=None, condTS_mod=None, L=1, h=None, kern="epanechnikov", 
+                 tau=0.001, h_cond=None, delta=0.01, self_norm=True, print_bw=True):
     '''
     Dose-response curve derivative estimation under the positivity condition.
     
     Parameters
     ----------
         Y: (n,)-array
-            The outcomes of n observations.
+            The outcome variables of n observations.
             
         X: (n,d+1)-array
             The first column of X is the treatment/exposure variable, while 
@@ -482,26 +794,59 @@ def DRDerivCurve(Y, X, t_eval=None, est="RA", beta_mod=None, n_iter=1000, lr=0.1
             The type of the dose-response curve estimator. (Default: est="RA". 
             Other choices include "IPW" and "DR".)
             
+        beta_mod: PyTorch neural network class or scikit-learn model or any python 
+        model that can use ".fit()" and ".predict()"
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        n_iter: int
+            The number of iterations or training epochs of the neural network model.
+            (Default: n_iter=1000.)
+            
+        lr: float
+            The learning rate (Default: lr=0.01.)
+            
+        condTS_type: str
+            Specifying the model type for estimating the conditional density of
+            the treatment variable T given the covariate vector S.
+            
+        condTS_mod: cikit-learn model or any python model that can use ".fit()" and ".predict()"
+            The regression model for estimating the conditional density of T given S.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
         h: float
-            The bandwidth parameter for the IPW/DR estimator.
+            The bandwidth parameter for the IPW/DR estimator. (Default: h=None. 
+            Then the Silverman's rule of thumb is applied; see Chen et al.(2016) 
+            for details.)
+            
+        tau: float
+            The threshold value that lower bounds the estimated conditional density
+            values. (Default: tau=0.001.)
+            
+        h_cond: float
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+            
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
             
         print_bw: boolean
             The indicator of whether the current bandwidth parameters should be
             printed to the console. (Default: print_bw=True.)
-            
-        kern: str
-            The name of the kernel function for the IPW/DR estimator.
-            (Default: "epanechnikov".)
     
     Return
     ----------
         theta_est: (m,)-array
-            The estimated derivatives of the dose-response curve evaluated 
-            at points "t_eval".
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
             
         sd_est: (m,)-array (if est="DR")
-            The estimated standard error of the DR derivative estimator 
-            evaluated at points "t_eval".
+            The estimated asymptotic stdndard deviation of the DR derivative 
+            estimator evaluated at points "t_eval".
     '''
     if t_eval is None: 
         t_eval = X[:,0].copy()
@@ -521,27 +866,30 @@ def DRDerivCurve(Y, X, t_eval=None, est="RA", beta_mod=None, n_iter=1000, lr=0.1
         else:
             theta_est = RADRDeriv(Y, X, t_eval, beta_mod, L, n_iter, lr)
     elif est == "IPW":
-        theta_est = IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, tau, h_cond, 
-                               self_norm)
+        theta_est = IPWDRDeriv(Y, X, t_eval, condTS_type, condTS_mod, L, h, kern, 
+                               tau, h_cond, self_norm)
     elif isinstance(beta_mod, BaseEstimator):
-        theta_est = DRDRDerivSKLearn(Y, X, t_eval, beta_mod, condTS_type, condTS_mod, L, h, kern, 
-                                     tau, h_cond, delta, self_norm)
+        theta_est = DRDRDerivSKLearn(Y, X, t_eval, beta_mod, condTS_type, condTS_mod, 
+                                     L, h, kern, tau, h_cond, delta, self_norm)
     else:
-        theta_est = DRDRDeriv(Y, X, t_eval, beta_mod, condTS_type, condTS_mod, L, h, kern, n_iter, lr, 
-                              tau, h_cond, self_norm)
+        theta_est = DRDRDeriv(Y, X, t_eval, beta_mod, condTS_type, condTS_mod, L, 
+                              h, kern, n_iter, lr, tau, h_cond, self_norm)
     
     return theta_est
 
 
 
+
 #=======================================================================================#
-# Without the positivity condition (work for additive confounding models)
+# Implementations of the proposed estimators without assuming the positivity 
+# condition (work for additive confounding models)
 
 def RADRDerivBC(Y, X, t_eval, mu, L=1, n_iter=1000, lr=0.1, h_bar=None, kernT_bar="gaussian", 
                 print_bw=False):
+    
     n = X.shape[0]  ## Number of data points
     if h_bar is None:
-        # Apply the Silverman's rule of thumb bandwidth in Chen et al.(2016).
+        # Apply the Silverman's rule of thumb bandwidth in Chen et al. (2016)
         h_bar = (4/3)**(1/5)*(n**(-1/5))*np.std(X[:,0])
     if print_bw:
         print("The current bandwidth for the conditional CDF estimator is "+ str(h_bar) + ".\n")
