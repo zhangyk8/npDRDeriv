@@ -884,9 +884,59 @@ def DRDerivCurve(Y, X, t_eval=None, est="RA", beta_mod=None, n_iter=1000, lr=0.0
 # Implementations of the proposed estimators without assuming the positivity 
 # condition (work for additive confounding models)
 
-def RADRDerivBC(Y, X, t_eval, mu, L=1, n_iter=1000, lr=0.1, h_bar=None, kernT_bar="gaussian", 
-                print_bw=False):
+def RADRDerivBC(Y, X, t_eval, mu, L=1, n_iter=1000, lr=0.01, h_bar=None, 
+                kernT_bar="gaussian", print_bw=False):
+    '''
+    Estimating the derivative of a dose-response curve through the regression 
+    adjustment (or G-computation) form by a PyTorch neural network model without 
+    assuming the positivity condition.
     
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        mu: a neural network class defined by PyTorch
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        n_iter: int
+            The number of iterations or training epochs of the neural network model.
+            (Default: n_iter=1000.)
+            
+        lr: float
+            The learning rate (Default: lr=0.01.)
+            
+        h_bar: float
+            The bandwidth parameters for the Nadaraya-Watson conditional CDF estimator. 
+            (Default: h_bar=None. Then, the Silverman's rule of thumb is applied. 
+            See Chen et al.(2016) for details.)
+            
+        kernT_bar: str
+            The name of the kernel function for Nadaraya-Watson conditional CDF 
+            estimator. (Default: "gaussian".)
+            
+        print_bw: boolean
+            The indicator of whether the current bandwidth parameters should be
+            printed to the console. (Default: print_bw=False.)
+            
+    Return
+    ----------
+        theta_C: (m,)-array
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
+    '''
     n = X.shape[0]  ## Number of data points
     if h_bar is None:
         # Apply the Silverman's rule of thumb bandwidth in Chen et al. (2016)
@@ -954,8 +1004,55 @@ def RADRDerivBC(Y, X, t_eval, mu, L=1, n_iter=1000, lr=0.1, h_bar=None, kernT_ba
     return theta_C
 
 
-def IPWDRDerivBC(Y, X, t_eval, L, h=None, kern="epanechnikov", b=None, self_norm=True, 
-                 thres_val=0.75):
+def IPWDRDerivBC(Y, X, t_eval, L=1, h=None, kern="epanechnikov", b=None, 
+                 thres_val=0.75, self_norm=True):
+    '''
+    Estimating the derivative of a dose-response curve through the inverse 
+    probability weighting (IPW) form without assuming the positivity condition.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        h: float
+            The bandwidth parameter. (Default: h=None. Then, the Silverman's 
+            rule of thumb is applied; see Chen et al.(2016) for details.)
+            
+        kern: str
+            The name of the kernel function. (Default: kern="epanechnikov".)
+            
+        b: float
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+            
+        thres_val: float
+            The threshold factor that is multiplied to the maximum conditional 
+            density values of S given T evaluated at the sample points. (Default: 
+            thres_val=0.75.)
+        
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
+            
+    Return
+    ----------
+        theta_est: (m,)-array
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
+    '''
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -1029,8 +1126,69 @@ def IPWDRDerivBC(Y, X, t_eval, L, h=None, kern="epanechnikov", b=None, self_norm
     return theta_est, condST_full
 
 
-def DRDRDerivBC(Y, X, t_eval, mu, L, h=None, kern="epanechnikov", n_iter=1000, lr=0.1, 
-                b=None, thres_val=0.75, self_norm=True):
+def DRDRDerivBC(Y, X, t_eval, mu, L=1, h=None, kern="epanechnikov", n_iter=1000, 
+                lr=0.01, b=None, thres_val=0.75, self_norm=True):
+    '''
+    Estimating the derivative of a dose-response curve through the doubly robust 
+    (DR) form by a PyTorch neural network model without assuming the positivity condition.
+    
+    Parameters
+    ----------
+        Y: (n,)-array
+            The outcome variables of n observations.
+            
+        X: (n,d+1)-array
+            The first column of X is the treatment/exposure variable, while 
+            the other d columns are the confounding variables of n observations.
+            
+        t_eval: (m,)-array
+            The coordinates of the m evaluation points.
+        
+        mu: a neural network class defined by PyTorch
+            The conditional mean outcome (or regression) model of Y given X.
+            
+        L: int
+            The number of data folds for cross-fitting. When L<= 1, no cross-fittings 
+            are applied and the regression model is fitted on the entire dataset.
+            (Default: L=1.)
+            
+        h: float
+            The bandwidth parameter. (Default: h=None. Then, the Silverman's 
+            rule of thumb is applied; see Chen et al.(2016) for details.)
+            
+        kern: str
+            The name of the kernel function. (Default: kern="epanechnikov".)
+            
+        n_iter: int
+            The number of iterations or training epochs of the neural network model.
+            (Default: n_iter=1000.)
+            
+        lr: float
+            The learning rate (Default: lr=0.01.)
+            
+        b: float
+            The bandwidth parameter for the kernel-smoothed conditional density
+            estimation methods. (Default: b=None.)
+            
+        thres_val: float
+            The threshold factor that is multiplied to the maximum conditional 
+            density values of S given T evaluated at the sample points. (Default: 
+            thres_val=0.75.)
+        
+        self_norm: boolean
+            An indicator of whether the self-normalized version is implemented.
+            (Default: self_norm=True.)
+            
+    Return
+    ----------
+        theta_est: (m,)-array
+            The estimated derivative of the dose-response curve evaluated at 
+            points "t_eval".
+            
+        sd_est: (m,)-array
+            The estimated asymptotic stdndard deviation of the DR derivative 
+            estimator evaluated at points "t_eval".
+    '''
     kern_type = kern
     kern, sigmaK_sq, K_sq = KernelRetrieval(kern)
     n = X.shape[0]  ## Number of data points
@@ -1157,3 +1315,4 @@ def DRDRDerivBC(Y, X, t_eval, mu, L, h=None, kern="epanechnikov", n_iter=1000, l
             var_est[:,i] = (IPW_hat[:,i] + (np.mean(beta_hat[:,i] * condST_int[:,i]) - theta_est[i]))**2 * (h**3)
         sd_est = np.sqrt(np.mean(var_est, axis=0)/(n*(h**3)))
     return theta_est, sd_est
+
