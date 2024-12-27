@@ -8,6 +8,7 @@ Table of contents
 
 <!--ts-->
    * [Requirements](#Requirements)
+   * [File Descriptions](#Descriptions)
 <!--te-->
 
 Requirements
@@ -18,5 +19,5 @@ Requirements
 - Optional if only use the main functions: [pandas](https://pandas.pydata.org/) and [pickle](https://docs.python.org/3/library/pickle.html).
 
 
-Descriptions of Files
+File Descriptions
 =================
