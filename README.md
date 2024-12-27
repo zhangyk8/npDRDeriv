@@ -13,4 +13,5 @@ This repository contains Python3 code for implementing the regression adjustment
 
 Some high-level descriptions of our Python scripts are as follows:
 
-- **Case Study -- Job Corps program (Final).ipynb**:
+- **Case Study -- Job Corps program (Final).ipynb**: This Jupyter Notebook contains detailed code for applying our proposed DR estimators to the Job Corps data (Replicating Figure 4 in the arxiv version of the paper).
+- ****:
