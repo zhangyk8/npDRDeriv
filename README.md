@@ -24,3 +24,8 @@ Some high-level descriptions of our Python scripts are as follows:
 - **Sim_Nopos1.py** and **Sim_Nopos1_inner.py**: These two files contain the code for applying our (bias-corrected) IPW and DR estimators when the data model violates the positivity condition (for parallel slurm jobs).
 - **Simulation2_nonsep_Replicate.py** and **Simulation2_self_norm.py**: These two files contain the code for applying our proposed estimators and replicating the finite-difference method proposed by Colangelo and Lee (2020) under the data model that satisfies the positivity condition (for parallel slurm jobs).
 - **Synthesize_Nopos_Res.py**, **Synthesize_Res2_Replicate.py**, and **Synthesize_Res2_selfnorm.py**: These files are used to synthesize the outputs from the parallel slurm jobs.
+
+
+### Additional References
+
+- K. Colangelo and Y.-Y. Lee (2020). Double debiased machine learning nonparametric inference with continuous treatments. _arXiv preprint arXiv:2004.03036_.
