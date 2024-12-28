@@ -112,6 +112,9 @@ These formulas lead to the **RA estimator** of <img src="https://latex.codecogs.
 <img src="https://latex.codecogs.com/svg.latex?\large&space;\widehat{\theta}_{\mathrm{C,RA}}(t)=\int\widehat{\beta}(t,\mathbf{s})\,d\hat{F}_{\mathbf{S}|T}(\mathbf{s}|t)."/>
 </p>
 
+The above IPW and DR estimators will give rise to inconsistent estimates of <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)"/> without the positivity even when the additive model holds true. We proposed our bias-corrected **IPW and DR estimators** of <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)"/> as:
+
+
 ### Additional References
 
 - K. Colangelo and Y.-Y. Lee (2020). Double debiased machine learning nonparametric inference with continuous treatments. _arXiv preprint arXiv:2004.03036_.
