@@ -128,6 +128,63 @@ More details can be found in Section 5 of our paper.
 
 ### 3. Example Code
 
+#### Dose-Response Curve Estimation Under Positivity
+
+```bash
+import numpy as np
+import scipy.stats
+from npDoseResponseDR import DRCurve
+from npDoseResponseDerivDR import DRDerivCurve, NeurNet
+from sklearn.neural_network import MLPRegressor
+
+rho = 0.5  # correlation between adjacent Xs
+d = 20   # Dimension of the confounding variables
+n = 2000
+
+Sigma = np.zeros((d,d)) + np.eye(d)
+for i in range(d):
+    for j in range(i+1, d):
+        if (j < i+2) or (j > i+d-2):
+            Sigma[i,j] = rho
+            Sigma[j,i] = rho
+sig = 1
+
+np.random.seed(123)
+# Data generating process
+X_sim = np.random.multivariate_normal(mean=np.zeros(d), cov=Sigma, size=n)
+nu = np.random.randn(n)
+eps = np.random.randn(n)
+theta = 1/(np.linspace(1, d, d)**2)
+
+T_sim = scipy.stats.norm.cdf(3*np.dot(X_sim, theta)) + 3*nu/4 - 1/2
+Y_sim = 1.2*T_sim + T_sim**2 + T_sim*X_sim[:,0] + 1.2*np.dot(X_sim, theta) + eps*np.sqrt(0.5+ scipy.stats.norm.cdf(X_sim[:,0]))
+X_dat = np.column_stack([T_sim, X_sim])
+t_qry = np.linspace(-2, 2, 41)
+
+# Choice of the bandwidth parameter
+h = 1.25*np.std(T_sim)*n**(-1/5)
+
+# RA estimator of m(t)
+reg_mod = MLPRegressor(hidden_layer_sizes=(10,), activation='relu', learning_rate='adaptive', 
+                       learning_rate_init=0.1, random_state=1, max_iter=200)
+m_est_ra5 = DRCurve(Y=Y_sim, X=X_dat, t_eval=t_qry, est="RA", mu=reg_mod, 
+                    L=5, h=None, kern="epanechnikov", print_bw=False)
+
+# IPW estimator of m(t)
+regr_nn2 = MLPRegressor(hidden_layer_sizes=(20,), activation='relu', learning_rate='adaptive', 
+                        learning_rate_init=0.1, random_state=1, max_iter=200)
+m_est_ipw5 = DRCurve(Y=Y_sim, X=X_dat, t_eval=t_qry, est="IPW", mu=None, 
+                     condTS_type='kde', condTS_mod=regr_nn2, tau=0.001, L=5, h=h, 
+                     kern="epanechnikov", h_cond=None, self_norm=True, print_bw=True)
+
+# DR estimator of m(t)
+m_est_dr5, sd_est_dr5 = DRCurve(Y=Y_sim, X=X_dat, t_eval=t_qry, est="DR", mu=reg_mod, 
+                                condTS_type='kde', condTS_mod=regr_nn2, tau=0.001, L=5, 
+                                h=h, kern="epanechnikov", h_cond=None, self_norm=True, print_bw=True)
+```
+
+#### Dose-Response Curve Derivative Estimation Under Positivity
+
 ```bash
 
 ```
