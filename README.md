@@ -163,7 +163,7 @@ X_dat = np.column_stack([T_sim, X_sim])
 t_qry = np.linspace(-2, 2, 41)
 
 # Choice of the bandwidth parameter
-h = 1.25*np.std(T_sim)*n**(-1/5)
+h = 4*np.std(T_sim)*n**(-1/5)
 
 # RA estimator of m(t)
 reg_mod = MLPRegressor(hidden_layer_sizes=(10,), activation='relu', learning_rate='adaptive', 
@@ -182,7 +182,53 @@ m_est_ipw5 = DRCurve(Y=Y_sim, X=X_dat, t_eval=t_qry, est="IPW", mu=None,
 m_est_dr5, sd_est_dr5 = DRCurve(Y=Y_sim, X=X_dat, t_eval=t_qry, est="DR", mu=reg_mod, 
                                 condTS_type='kde', condTS_mod=regr_nn2, tau=0.001, L=5, 
                                 h=h, kern="epanechnikov", h_cond=None, self_norm=True, print_bw=True)
+
+# RA estimator of \theta(t)
+theta_ra5 = DRDerivCurve(Y=Y_sim, X=X_dat, t_eval=t_qry, est="RA", beta_mod=NeurNet, 
+                         n_iter=1000, lr=0.01, L=5, print_bw=False)
+
+# IPW estimator of \theta(t)
+theta_ipw5 = DRDerivCurve(Y=Y_sim, X=X_dat, t_eval=t_qry, est="IPW", beta_mod=None, 
+                          condTS_type='kde', condTS_mod=regr_nn2, tau=0.001, L=5, 
+                          h=h, kern="epanechnikov", h_cond=None, self_norm=True, print_bw=True)
+
+# DR estimator of \theta(t)
+theta_dr5, theta_sd5 = DRDerivCurve(Y=Y_sim, X=X_dat, t_eval=t_qry, est="DR", beta_mod=NeurNet, 
+                                    n_iter=1000, lr=0.01, condTS_type='kde', condTS_mod=regr_nn2, tau=0.001, 
+                                    L=5, h=h, kern="epanechnikov", h_cond=None, self_norm=True, print_bw=True)
+
+## Visualization of the estimators
+plt.rcParams.update({'font.size': 16})
+plt.figure(figsize=(12,5))
+plt.subplot(1, 2, 1)
+plt.plot(t_qry, 1.2*t_qry + t_qry**2, linewidth=4, color='red', label=r'True $m(t)$')
+plt.plot(t_qry, m_est_ra5, linewidth=2, color='darkorange', label=r'$\widehat{m}_{\mathrm{RA}}(t)$')
+plt.plot(t_qry, m_est_ipw5, linewidth=2, alpha=0.8, color='darkgreen', label=r'$\widehat{m}_{\mathrm{IPW}}(t)$')
+plt.plot(t_qry, m_est_dr5, linewidth=2, alpha=0.8, color='blue', label=r'$\widehat{m}_{\mathrm{DR}}(t)$')
+plt.fill_between(t_qry, m_est_dr5 - sd_est_dr5*scipy.stats.norm.ppf(0.975), 
+                 m_est_dr5 + sd_est_dr5*scipy.stats.norm.ppf(0.975), 
+                 color='blue', alpha=.3, label='95% pointwise CIs')
+plt.legend(fontsize=13)
+plt.xlabel('Treatment value t')
+plt.ylabel(r'Dose-response curve $m(t)$ or $\widehat{m}(t)$')
+
+plt.subplot(1, 2, 2)
+plt.plot(t_qry, 1.2 + 2*t_qry, linewidth=4, color='red', label=r'True $\theta(t)$')
+plt.plot(t_qry, theta_ra5, linewidth=2, color='darkorange', label=r'$\widehat{\theta}_{\mathrm{RA}}(t)$')
+plt.plot(t_qry, theta_ipw5, linewidth=2, alpha=0.8, color='darkgreen', label=r'$\widehat{\theta}_{\mathrm{IPW}}(t)$')
+plt.plot(t_qry, theta_dr5, linewidth=2, alpha=0.8, color='blue', label=r'$\widehat{\theta}_{\mathrm{DR}}(t)$')
+plt.fill_between(t_qry, theta_dr5 - theta_sd5*scipy.stats.norm.ppf(0.975), 
+                 theta_dr5 + theta_sd5*scipy.stats.norm.ppf(0.975), 
+                 color='blue', alpha=.3, label='95% pointwise CIs')
+plt.legend(fontsize=13)
+plt.xlabel('Treatment value t')
+plt.ylabel(r'Derivative curve $\theta(t)$ or $\widehat{\theta}(t)$')
+
+plt.tight_layout()
+plt.savefig('./Figures/est_illust_pos.png')
 ```
+
+
 
 #### Dose-Response Curve Derivative Estimation Under Positivity
 
