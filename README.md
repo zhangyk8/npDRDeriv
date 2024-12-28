@@ -119,6 +119,13 @@ The above IPW and DR estimators will give rise to inconsistent estimates of <img
 <img src="https://latex.codecogs.com/svg.latex?\large&space;\widehat{\theta}_{\mathrm{C,DR}}(t)=\frac{1}{nh^2}\sum_{i=1}^n\frac{\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)\widehat{p}_{\zeta}(\mathbf{S}_i|t)}{\kappa_2\cdot\widehat{p}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)-(T_i-t)\widehat{\beta}(t,\mathbf{S}_i)\right]+\int\widehat{\beta}(t,\mathbf{s})\cdot\widehat{p}_{\zeta}(\mathbf{s}|t)\,d\mathbf{s},"/>
 </p>
 
+where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mathbf{s}),\,\widehat{\beta}(t,\mathbf{s})"/>, and <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{p}(t,\mathbf{s}),\widehat{p}_{\zeta}(\mathbf{s}|t)"/> are (consistent) estimators of <img src="https://latex.codecogs.com/svg.latex?&space;\mu(t,\mathbf{s}),\,\beta(t,\mathbf{s})"/>, the joint density <img src="https://latex.codecogs.com/svg.latex?&space;p(t|\mathbf{s})"/>, and the interior conditional density <img src="https://latex.codecogs.com/svg.latex?&space;p_{\zeta}(\mathbf{s}|t)"/> respectively. We also prove that this bias-corrected DR estimator is not only robust to the misspecifications of the conditional mean outcome and conditional density models but also asymptotically normal as
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?&space;\sqrt{nh^3}\left[\widehat{\theta}_{\mathrm{C,DR}}(t)-\theta(t)-h^2B_{C,\theta}(t)\right]\stackrel{d}{\to}\mathcal{N}\left(0,V_{C,\theta}(t)\right)."/>
+</p>
+
+More details can be found in Section 5 of our paper.
+
 ### Additional References
 
 - K. Colangelo and Y.-Y. Lee (2020). Double debiased machine learning nonparametric inference with continuous treatments. _arXiv preprint arXiv:2004.03036_.
