@@ -54,7 +54,15 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> is a smoothin
 <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{m}_{\mathrm{DR}}(t)=\frac{1}{nh}\sum_{i=1}^n\left\{\frac{K\left(\frac{T_i-t}{h}\right)}{\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\cdot\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)\right]+h\cdot\widehat{\mu}(t,\mathbf{S}_i)\right\},"/>
 </p>
 
-where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mathbf{s})"/> and <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{p}_{T|\mathbf{S}}(t|\mathbf{s})"/> are (consistent) estimators of <img src="https://latex.codecogs.com/svg.latex?&space;\mu(t,\mathbf{s})"/> and <img src="https://latex.codecogs.com/svg.latex?&space;p_{T|\mathbf{S}}(t|\mathbf{s})"/>, respectively.
+where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mathbf{s})"/> and <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{p}_{T|\mathbf{S}}(t|\mathbf{s})"/> are (consistent) estimators of <img src="https://latex.codecogs.com/svg.latex?&space;\mu(t,\mathbf{s})"/> and <img src="https://latex.codecogs.com/svg.latex?&space;p_{T|\mathbf{S}}(t|\mathbf{s})"/>, respectively. The DR estimator is not only robust to the misspecifications of the conditional mean outcome and conditional density models but also asymptotically normal as
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?&space;\sqrt{nh}\left[\widehat{m}_{\mathrm{DR}}(t)-m(t)-h^2B_m(t)\right]\stackrel{d}{\to}\mathcal{N}\left(0,V_m(t)\right),"/>
+</p>
+
+where <img src="https://latex.codecogs.com/svg.latex?&space;h^2B_m(t)"/> is the bias term that shrinks quadratically with respect to <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> and <img src="https://latex.codecogs.com/svg.latex?&space;V_m(t)"/> is the asymptotic variance term that can be estimated by
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{V}_m(t)=\frac{1}{n}\sum_{i=1}^n\left\{\frac{K\left(\frac{T_i-t}{h}\right)}{\sqrt{h}\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)\right]+h\cdot\widehat{\mu}(t,\mathbf{S}_i)\right\}^2."/>
+</p>
 
 ### Additional References
 
