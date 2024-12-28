@@ -277,7 +277,7 @@ plt.plot(t_qry, theta_C_DR5, linewidth=2, alpha=0.8, color='blue', label=r'$\wid
 plt.fill_between(t_qry, theta_C_DR5 - theta_C_sd5*scipy.stats.norm.ppf(0.975), 
                  theta_C_DR5 + theta_C_sd5*scipy.stats.norm.ppf(0.975), 
                  color='blue', alpha=.3, label='95% pointwise CIs')
-plt.legend()
+plt.legend(fontsize=13)
 plt.xlabel('Treatment value t')
 plt.ylabel(r'Derivative curve $\theta(t)$ or $\widehat{\theta}_C(t)$')
 plt.tight_layout()
@@ -285,7 +285,7 @@ plt.savefig('./Figures/est_illust_nopos.png')
 ```
 
 <p align="center">
-<img src="https://github.com/zhangyk8/npDRDeriv/blob/main/Figures/est_illust_nopos.png" style="zoom:60%" />
+<img src="https://github.com/zhangyk8/npDRDeriv/blob/main/Figures/est_illust_nopos.png" style="zoom:50%" />
  <br><B>Fig 2. </B>Illustrative plot of bias-corrected RA, IPW, and DR estimators of the derivative of a dose-response curve without positivity.
 </p>
 
