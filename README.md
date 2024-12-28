@@ -95,7 +95,7 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mat
 
 where <img src="https://latex.codecogs.com/svg.latex?&space;h^2B_{\theta}(t)"/> is the bias term that shrinks quadratically to 0 with respect to <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> and <img src="https://latex.codecogs.com/svg.latex?&space;V_{\theta}(t)"/> is the asymptotic variance term that can be estimated by
 <p align="center">
-<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{V}_{\theta}(t)=\frac{1}{n}\sum_{i=1}^n\left\{\frac{\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)}{\sqrt{h}\cdot\kappa_2\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)-(T_i-t)\widehat{\beta}(t,\mathbf{S}_i)\right]+\sqrt{h^3}\cdot\left[\widehat{\beta}(t,\mathbf{S}_i)-\widehat{\theta}_{\mathrm{DR}}(t)\right]\right\}^2."/>
+<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{V}_{\theta}(t)=\frac{1}{n}\sum_{i=1}^n\left\{\frac{\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)}{\sqrt{h}\cdot\kappa_2\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)-(T_i-t)\widehat{\beta}(t,\mathbf{S}_i)\right]+\sqrt{h^3}\left[\widehat{\beta}(t,\mathbf{S}_i)-\widehat{\theta}_{\mathrm{DR}}(t)\right]\right\}^2."/>
 </p>
 
 More details can be found in Section 3 of our paper.
