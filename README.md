@@ -113,7 +113,11 @@ These formulas lead to the **RA estimator** of <img src="https://latex.codecogs.
 </p>
 
 The above IPW and DR estimators will give rise to inconsistent estimates of <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)"/> without the positivity even when the additive model holds true. We proposed our bias-corrected **IPW and DR estimators** of <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)"/> as:
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?\large&space;\widehat{\theta}_{\mathrm{C,IPW}}(t)=\frac{1}{nh^2}\sum_{i=1}^n\frac{Y_i\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)\widehat{p}_{\zeta}(\mathbf{S}_i|t)}{\kappa_2\cdot\widehat{p}(T_i|\mathbf{S}_i)},"/>
 
+<img src="https://latex.codecogs.com/svg.latex?\large&space;\widehat{\theta}_{\mathrm{C,DR}}(t)=\frac{1}{nh^2}\sum_{i=1}^n\frac{\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)\widehat{p}_{\zeta}(\mathbf{S}_i|t)}{\kappa_2\cdot\widehat{p}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)-(T_i-t)\widehat{\beta}(t,\mathbf{S}_i)\right]+\int\widehat{\beta}(t,\mathbf{s})\cdot\widehat{p}_{\zeta}(\mathbf{s}|t)\,d\mathbf{s},"/>
+</p>
 
 ### Additional References
 
