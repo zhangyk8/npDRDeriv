@@ -26,6 +26,10 @@ Some high-level descriptions of our Python scripts are as follows:
 - **Synthesize_Nopos_Res.py**, **Synthesize_Res2_Replicate.py**, and **Synthesize_Res2_selfnorm.py**: These files are used to synthesize the outputs from the parallel slurm jobs.
 
 
+### 1. Problem Setup
+
+Under some regularity conditions (see Section 2 of our paper), the dose-response curve is defined as <img src="https://latex.codecogs.com/svg.latex?&space;t\mapsto\,m(t)=\mathbb{E}\left[Y(t)\right]"/>, where <img src="https://latex.codecogs.com/svg.latex?&space;Y(t)"/> is the potential outcome that would have been observed under treatment level <img src="https://latex.codecogs.com/svg.latex?&space;T=t"/>.
+
 ### Additional References
 
 - K. Colangelo and Y.-Y. Lee (2020). Double debiased machine learning nonparametric inference with continuous treatments. _arXiv preprint arXiv:2004.03036_.
