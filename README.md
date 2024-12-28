@@ -68,6 +68,19 @@ More details can be found in Section 2.1 and Section D of our paper.
 
 For nonparametric estimation of the derivative function <img src="https://latex.codecogs.com/svg.latex?&space;t\mapsto\theta(t)=\frac{d}{dt}\mathbb{E}\left[Y(t)\right]"/>, we also consider three similar strategies:
 
+* **Regression Adjustment (RA) Estimator:**
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?\large&space;\widehat{\theta}_{\mathrm{RA}}(t)=\frac{1}{n}\sum_{i=1}^n\widehat{\beta}(t,\mathbf{S}_i),"/>
+</p>
+
+where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\beta}(t,\mathbf{s})"/> is a (consistent) estimator of <img src="https://latex.codecogs.com/svg.latex?&space;\beta(t,\mathbf{s})=\frac{\partial}{\partial\,t}\mu(t,\mathbf{s})"/>.
+
+* **Inverse Probability Weighting (IPW) Estimator:**
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\theta}_{\mathrm{IPW}}(t)=\frac{1}{nh^2}\sum_{i=1}^n\frac{Y_i\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)}{\kappa_2\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)},"/>
+</p>
+
+where <img src="https://latex.codecogs.com/svg.latex?&space;K:\mathbb{R}\to[0,\infty)"/> is a kernel function with <img src="https://latex.codecogs.com/svg.latex?&space;\kappa_2=\int\,u^2K(u)\,du"/>, <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> is a smoothing bandwidth parameter and <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{p}_{T|\mathbf{S}}(t|\mathbf{s})"/> is a (consistent) estimator of the conditional density <img src="https://latex.codecogs.com/svg.latex?&space;p_{T|\mathbf{S}}(t|\mathbf{s})"/>.
 
 More details can be found in Section 3 of our paper.
 
