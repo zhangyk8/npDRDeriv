@@ -126,6 +126,8 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mat
 
 More details can be found in Section 5 of our paper.
 
+### 3. Example Code
+
 ### Additional References
 
 - K. Colangelo and Y.-Y. Lee (2020). Double debiased machine learning nonparametric inference with continuous treatments. _arXiv preprint arXiv:2004.03036_.
