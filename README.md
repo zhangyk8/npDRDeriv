@@ -59,9 +59,9 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mat
 <img src="https://latex.codecogs.com/svg.latex?&space;\sqrt{nh}\left[\widehat{m}_{\mathrm{DR}}(t)-m(t)-h^2B_m(t)\right]\stackrel{d}{\to}\mathcal{N}\left(0,V_m(t)\right),"/>
 </p>
 
-where <img src="https://latex.codecogs.com/svg.latex?&space;h^2B_m(t)"/> is the bias term that shrinks quadratically with respect to <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> and <img src="https://latex.codecogs.com/svg.latex?&space;V_m(t)"/> is the asymptotic variance term that can be estimated by
+where <img src="https://latex.codecogs.com/svg.latex?&space;h^2B_m(t)"/> is the bias term that shrinks quadratically to 0 with respect to <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> and <img src="https://latex.codecogs.com/svg.latex?&space;V_m(t)"/> is the asymptotic variance term that can be estimated by
 <p align="center">
-<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{V}_m(t)=\frac{1}{n}\sum_{i=1}^n\left\{\frac{K\left(\frac{T_i-t}{h}\right)}{\sqrt{h}\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)\right]+h\cdot\widehat{\mu}(t,\mathbf{S}_i)\right\}^2."/>
+<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{V}_m(t)=\frac{1}{n}\sum_{i=1}^n\left\{\frac{K\left(\frac{T_i-t}{h}\right)}{\sqrt{h}\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)\right]+\sqrt{h}\left[\widehat{\mu}(t,\mathbf{S}_i)-\widehat{m}_{\mathrm{DR}}(t)\right]\right\}^2."/>
 </p>
 
 More details can be found in Section 2.1 and Section D of our paper.
@@ -77,10 +77,26 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\beta}(t,\m
 
 * **Inverse Probability Weighting (IPW) Estimator:**
 <p align="center">
-<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\theta}_{\mathrm{IPW}}(t)=\frac{1}{nh^2}\sum_{i=1}^n\frac{Y_i\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)}{\kappa_2\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)},"/>
+<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\theta}_{\mathrm{IPW}}(t)=\frac{1}{nh^2}\sum_{i=1}^n\frac{Y_i\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)}{\kappa_2\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)},"/>
 </p>
 
 where <img src="https://latex.codecogs.com/svg.latex?&space;K:\mathbb{R}\to[0,\infty)"/> is a kernel function with <img src="https://latex.codecogs.com/svg.latex?&space;\kappa_2=\int\,u^2K(u)\,du"/>, <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> is a smoothing bandwidth parameter and <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{p}_{T|\mathbf{S}}(t|\mathbf{s})"/> is a (consistent) estimator of the conditional density <img src="https://latex.codecogs.com/svg.latex?&space;p_{T|\mathbf{S}}(t|\mathbf{s})"/>.
+
+
+* **Doubly Robust (DR) Estimator:**
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\theta}_{\mathrm{DR}}(t)=\frac{1}{nh}\sum_{i=1}^n\left\{\frac{\left(\frac{T_i-t}{h}\right)K\left(\frac{T_i-t}{h}\right)}{h\cdot\kappa_2\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\cdot\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)-\left(T_i-t\right)\widehat{\beta}(t,\mathbf{S}_i)\right]+h\cdot\widehat{\beta}(t,\mathbf{S}_i)\right\},"/>
+</p>
+
+where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mathbf{s}),\,\widehat{\beta}(t,\mathbf{s})"/> and <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{p}_{T|\mathbf{S}}(t|\mathbf{s})"/> are (consistent) estimators of <img src="https://latex.codecogs.com/svg.latex?&space;\mu(t,\mathbf{s}),\,\beta(t,\mathbf{s})"/> and <img src="https://latex.codecogs.com/svg.latex?&space;p_{T|\mathbf{S}}(t|\mathbf{s})"/>, respectively. Again, our proposed DR estimator of <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)"/> is not only robust to the misspecifications of the conditional mean outcome and conditional density models but also asymptotically normal as
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?&space;\sqrt{nh}\left[\widehat{\theta}_{\mathrm{DR}}(t)-\theta(t)-h^2B_{\theta}(t)\right]\stackrel{d}{\to}\mathcal{N}\left(0,V_{\theta}(t)\right),"/>
+</p>
+
+where <img src="https://latex.codecogs.com/svg.latex?&space;h^2B_{\theta}(t)"/> is the bias term that shrinks quadratically to 0 with respect to <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> and <img src="https://latex.codecogs.com/svg.latex?&space;V_{\theta}(t)"/> is the asymptotic variance term that can be estimated by
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?&space;\widehat{V}_{\theta}(t)=\frac{1}{n}\sum_{i=1}^n\left\{\frac{K\left(\frac{T_i-t}{h}\right)}{\sqrt{h}\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)\right]+h\cdot\widehat{\mu}(t,\mathbf{S}_i)\right\}^2."/>
+</p>
 
 More details can be found in Section 3 of our paper.
 
