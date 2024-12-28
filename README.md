@@ -90,7 +90,7 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;K:\mathbb{R}\to[0,\i
 
 where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mathbf{s}),\,\widehat{\beta}(t,\mathbf{s})"/> and <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{p}_{T|\mathbf{S}}(t|\mathbf{s})"/> are (consistent) estimators of <img src="https://latex.codecogs.com/svg.latex?&space;\mu(t,\mathbf{s}),\,\beta(t,\mathbf{s})"/> and <img src="https://latex.codecogs.com/svg.latex?&space;p_{T|\mathbf{S}}(t|\mathbf{s})"/>, respectively. Again, our proposed DR estimator of <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)"/> is not only robust to the misspecifications of the conditional mean outcome and conditional density models but also asymptotically normal as
 <p align="center">
-<img src="https://latex.codecogs.com/svg.latex?&space;\sqrt{nh}\left[\widehat{\theta}_{\mathrm{DR}}(t)-\theta(t)-h^2B_{\theta}(t)\right]\stackrel{d}{\to}\mathcal{N}\left(0,V_{\theta}(t)\right),"/>
+<img src="https://latex.codecogs.com/svg.latex?&space;\sqrt{nh^3}\left[\widehat{\theta}_{\mathrm{DR}}(t)-\theta(t)-h^2B_{\theta}(t)\right]\stackrel{d}{\to}\mathcal{N}\left(0,V_{\theta}(t)\right),"/>
 </p>
 
 where <img src="https://latex.codecogs.com/svg.latex?&space;h^2B_{\theta}(t)"/> is the bias term that shrinks quadratically to 0 with respect to <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> and <img src="https://latex.codecogs.com/svg.latex?&space;V_{\theta}(t)"/> is the asymptotic variance term that can be estimated by
