@@ -35,7 +35,9 @@ Under some regularity conditions and the positivity condition (see Section 2 of 
 
 For nonparametric estimation of the dose-response curve <img src="https://latex.codecogs.com/svg.latex?&space;t\mapsto\,m(t)=\mathbb{E}\left[Y(t)\right]"/> with observed data <img src="https://latex.codecogs.com/svg.latex?&space;\left\{(Y_i,T_i,\mathbf{S}_i)\right\}_{i=1}^n"/>, there are three major strategies:
 
-* **Regression Adjustment (RA) Estimator:** <img src="https://latex.codecogs.com/svg.latex?&space;\hat{m}_{\mathrm{RA}}(t)=\frac{1}{n}\sum_{i=1}^n\hat{\mu}(t,\mathbf{S}_i)"/>, where <img src="https://latex.codecogs.com/svg.latex?&space;\hat{\mu}"/> is a (consistent) estimator of the conditional mean outcome function <img src="https://latex.codecogs.com/svg.latex?&space;\mu"/>.
+* **Regression Adjustment (RA) Estimator:** <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{m}_{\mathrm{RA}}(t)=\frac{1}{n}\sum_{i=1}^n\widehat{\mu}(t,\mathbf{S}_i)"/>, where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mathbf{s})"/> is a (consistent) estimator of the conditional mean outcome function <img src="https://latex.codecogs.com/svg.latex?&space;\mu(t,\mathbf{s})"/>.
+* **Inverse Probability Weighting (IPW) Estimator:** <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{m}_{\mathrm{IPW}}(t)=\frac{1}{nh}\sum_{i=1}^n\frac{Y_i\cdot\,K\left(\frac{T_i-t}{h}\right)}{\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}"/>, where <img src="https://latex.codecogs.com/svg.latex?&space;h>0"/> is a smoothing bandwidth parameter and <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{p}_{T|\mathbf{S}}(t|\mathbf{s})"/> is a (consistent) estimator of the conditional density <img src="https://latex.codecogs.com/svg.latex?&space;p_{T|\mathbf{S}}(t|\mathbf{s})"/>.
+* **Doubly Robust (DR) Estimator:** <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{m}_{\mathrm{DR}}(t)=\frac{1}{nh}\sum_{i=1}^n\left\{\frac{K\left(\frac{T_i-t}{h}\right)}{\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\cdot\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)\right]+h\cdot\widehat{\mu}(t,\mathbf{S}_i)\right\}"/>
 
 ### Additional References
 
