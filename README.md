@@ -33,6 +33,10 @@ The dose-response curve is defined as <img src="https://latex.codecogs.com/svg.l
 
 Under some regularity conditions and the positivity condition (see Section 2 of our paper), the dose-response curve and its derivative can be identified as <img src="https://latex.codecogs.com/svg.latex?&space;m(t)=\mathbb{E}\left[\mu(t,\mathbf{S})\right]"/> and <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)=\mathbb{E}\left[\frac{\partial}{\partial\,t}\mu(t,\mathbf{S})\right]"/>, where <img src="https://latex.codecogs.com/svg.latex?&space;\mu(t,\mathbf{s})=\mathbb{E}\left(Y|T=t,\mathbf{S}=\mathbf{s}\right)"/> is the conditional mean outcome (or regression) function of the outcome variable <img src="https://latex.codecogs.com/svg.latex?&space;Y\in\mathcal{Y}\subset\mathbb{R}"/> given the treatment <img src="https://latex.codecogs.com/svg.latex?&space;T=t\in\mathcal{T}\subset\mathbb{R}"/> and the covariate vector <img src="https://latex.codecogs.com/svg.latex?&space;\mathbf{S}=\mathbf{s}\in\mathcal{S}\subset\mathbb{R}^d"/>.
 
+For nonparametric estimation of the dose-response curve <img src="https://latex.codecogs.com/svg.latex?&space;t\mapsto\,m(t)=\mathbb{E}\left[Y(t)\right]"/> with observed data <img src="https://latex.codecogs.com/svg.latex?&space;\left\{(Y_i,T_i,\mathbf{S}_i)\right\}_{i=1}^n"/>, there are three major strategies:
+
+* **Regression Adjustment (RA) Estimator:** <img src="https://latex.codecogs.com/svg.latex?&space;\hat{m}_{\mathrm{RA}}(t)=\frac{1}{n}\sum_{i=1}^n\hat{\mu}(t,\mathbf{S}_i)"/>, where <img src="https://latex.codecogs.com/svg.latex?&space;\hat{\mu}"/> is a (consistent) estimator of the conditional mean outcome function <img src="https://latex.codecogs.com/svg.latex?&space;\mu"/>.
+
 ### Additional References
 
 - K. Colangelo and Y.-Y. Lee (2020). Double debiased machine learning nonparametric inference with continuous treatments. _arXiv preprint arXiv:2004.03036_.
