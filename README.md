@@ -102,9 +102,14 @@ More details can be found in Section 3 of our paper.
 
 ### 3. Nonparametric Inference Without the Positivity Condition
 
-Both the dose-response curve  <img src="https://latex.codecogs.com/svg.latex?&space;m(t)=\mathbb{E}\left[Y(t)\right]"/> and its derivative <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)=\frac{d}{dt}\mathbb{E}\left[Y(t)\right]"/> are unidentifiable in general when the positivity condition is violated; see Section 4.1 in our paper. To identify and estimate them, we assume an additive structure on the potential outcome <img src="https://latex.codecogs.com/svg.latex?&space;Y(t)=\bar{m}(t)+\eta(\mathbf{S})+\epsilon"/> so that
+Both the dose-response curve <img src="https://latex.codecogs.com/svg.latex?&space;m(t)=\mathbb{E}\left[Y(t)\right]"/> and its derivative <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)=\frac{d}{dt}\mathbb{E}\left[Y(t)\right]"/> are unidentifiable in general when the positivity condition is violated; see Section 4.1 in our paper. To identify and estimate them, we assume an additive structure on the potential outcome <img src="https://latex.codecogs.com/svg.latex?&space;Y(t)=\bar{m}(t)+\eta(\mathbf{S})+\epsilon"/> so that
 <p align="center">
 <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)=\bar{m}'(t)=\mathbb{E}\left[\frac{\partial}{\partial\,t}\mu(t,\mathbf{S})\Big|T=t\right],\quad\,m(t)=\mathbb{E}\left[Y+\int_T^t\theta(\tilde{t})\,d\tilde{t}\right]=\mathbb{E}\left\{Y+\int_T^t\mathbb{E}\left[\frac{\partial}{\partial\,t}\mu(T,\mathbf{S})\Big|T=\tilde{t}\right]\,d\tilde{t}\right\}."/>
+</p>
+
+These formulas lead to the **RA estimator** of <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)"/> as:
+<p align="center">
+<img src="https://latex.codecogs.com/svg.latex?\large&space;\widehat{\theta}_{\mathrm{C,RA}}(t)=\int\widehat{\beta}(t,\mathbf{s})\,d\hat{F}_{\mathbf{S}|T}(\mathbf{s}|t)."/>
 </p>
 
 ### Additional References
