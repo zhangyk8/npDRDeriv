@@ -228,6 +228,10 @@ plt.tight_layout()
 plt.savefig('./Figures/est_illust_pos.png')
 ```
 
+<p align="center">
+<img src="https://github.com/zhangyk8/npDRDeriv/blob/main/Figures/est_illust_pos.png" style="zoom:60%" />
+ <br><B>Fig 1. </B>Illustrative plots of RA, IPW, and DR estimators of a dose-response curve and its derivative.
+</p>
 
 
 #### Dose-Response Curve Derivative Estimation Under Positivity
