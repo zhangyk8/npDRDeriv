@@ -133,6 +133,7 @@ More details can be found in Section 5 of our paper.
 ```bash
 import numpy as np
 import scipy.stats
+import matplotlib.pyplot as plt
 from npDoseResponseDR import DRCurve
 from npDoseResponseDerivDR import DRDerivCurve, NeurNet
 from sklearn.neural_network import MLPRegressor
