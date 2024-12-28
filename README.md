@@ -64,6 +64,13 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;h^2B_m(t)"/> is the 
 <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{V}_m(t)=\frac{1}{n}\sum_{i=1}^n\left\{\frac{K\left(\frac{T_i-t}{h}\right)}{\sqrt{h}\cdot\widehat{p}_{T|\mathbf{S}}(T_i|\mathbf{S}_i)}\left[Y_i-\widehat{\mu}(t,\mathbf{S}_i)\right]+h\cdot\widehat{\mu}(t,\mathbf{S}_i)\right\}^2."/>
 </p>
 
+More details can be found in Section 2.1 and Section D of our paper.
+
+For nonparametric estimation of the derivative function <img src="https://latex.codecogs.com/svg.latex?&space;t\mapsto\theta(t)=\frac{d}{dt}\mathbb{E}\left[Y(t)\right]"/>, we also consider three similar strategies:
+
+
+More details can be found in Section 3 of our paper.
+
 ### Additional References
 
 - K. Colangelo and Y.-Y. Lee (2020). Double debiased machine learning nonparametric inference with continuous treatments. _arXiv preprint arXiv:2004.03036_.
