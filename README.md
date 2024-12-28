@@ -100,6 +100,10 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;h^2B_{\theta}(t)"/> 
 
 More details can be found in Section 3 of our paper.
 
+### 3. Nonparametric Inference Without the Positivity Condition
+
+Both the dose-response curve  <img src="https://latex.codecogs.com/svg.latex?&space;m(t)=\mathbb{E}\left[Y(t)\right]"/> and its derivative <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)=\frac{d}{dt}\mathbb{E}\left[Y(t)\right]"/> are unidentifiable in general when the positivity condition is violated.
+
 ### Additional References
 
 - K. Colangelo and Y.-Y. Lee (2020). Double debiased machine learning nonparametric inference with continuous treatments. _arXiv preprint arXiv:2004.03036_.
