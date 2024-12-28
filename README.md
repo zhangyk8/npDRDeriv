@@ -128,7 +128,7 @@ More details can be found in Section 5 of our paper.
 
 ### 3. Example Code
 
-#### Dose-Response Curve Estimation Under Positivity
+#### Estimation of Dose-Response Curve and its Derivative Under Positivity
 
 ```bash
 import numpy as np
@@ -230,15 +230,64 @@ plt.savefig('./Figures/est_illust_pos.png')
 
 <p align="center">
 <img src="https://github.com/zhangyk8/npDRDeriv/blob/main/Figures/est_illust_pos.png" style="zoom:60%" />
- <br><B>Fig 1. </B>Illustrative plots of RA, IPW, and DR estimators of a dose-response curve and its derivative.
+ <br><B>Fig 1. </B>Illustrative plots of RA, IPW, and DR estimators of a dose-response curve and its derivative under positivity.
 </p>
 
 
 #### Dose-Response Curve Derivative Estimation Under Positivity
 
 ```bash
+import numpy as np
+import scipy.stats
+import matplotlib.pyplot as plt
+from npDoseResponseDerivDR import NeurNet, RADRDerivBC, IPWDRDerivBC, DRDRDerivBC
 
+n = 2000
+np.random.seed(123)
+# Data generating process
+X_sim = 2*np.random.rand(n) - 1
+T_sim = np.sin(np.pi*X_sim) + np.random.rand(n)*0.6 - 0.3
+Y_sim = T_sim**2 + T_sim**3 + 10*X_sim + np.random.normal(loc=0, scale=1, size=n)
+X_dat = np.concatenate([T_sim.reshape(-1,1), X_sim.reshape(-1,1)], axis=1)
+
+# Query points 
+t_qry = np.linspace(-0.8, 0.8, 41)
+
+# Choice of the bandwidth parameter
+h = 2*np.std(T_sim)*n**(-1/5)
+
+# Bias-corrected RA estimator of \theta(t)
+theta_C_RA5 = RADRDerivBC(Y=Y_sim, X=X_dat, t_eval=t_qry, mu=NeurNet, L=5, 
+                          n_iter=1000, lr=0.01, h_bar=None, kernT_bar="gaussian")
+
+# Bias-corrected IPW estimator of \theta(t)
+theta_C_IPW5, condTS5 = IPWDRDerivBC(Y=Y_sim, X=X_dat, t_eval=t_qry, L=5, h=h, kern='epanechnikov', 
+                                     b=None, self_norm=True, thres_val=0.85)
+
+# Bias-corrected DR estimator of \theta(t)
+theta_C_DR5, theta_C_sd5 = DRDRDerivBC(Y=Y_sim, X=X_dat, t_eval=t_qry, mu=NeurNet, L=5, h=h, kern='epanechnikov', 
+                                       n_iter=1000, lr=0.01, b=None, thres_val=0.85, self_norm=False)
+
+plt.rcParams.update({'font.size': 16})
+plt.figure(figsize=(6,5))
+plt.plot(t_qry, 2*t_qry + 3*(t_qry**2), linewidth=4, color='red', label=r'True $\theta(t)$')
+plt.plot(t_qry, theta_C_RA5, linewidth=2, alpha=0.8, color='darkorange', label=r'$\widehat{\theta}_{\mathrm{C,RA}}(t)$')
+plt.plot(t_qry, theta_C_IPW5, linewidth=2, alpha=0.8, color='darkgreen', label=r'$\widehat{\theta}_{\mathrm{C,IPW}}(t)$')
+plt.plot(t_qry, theta_C_DR5, linewidth=2, alpha=0.8, color='blue', label=r'$\widehat{\theta}_{\mathrm{C,DR}}(t)$')
+plt.fill_between(t_qry, theta_C_DR5 - theta_C_sd5*scipy.stats.norm.ppf(0.975), 
+                 theta_C_DR5 + theta_C_sd5*scipy.stats.norm.ppf(0.975), 
+                 color='blue', alpha=.3, label='95% pointwise CIs')
+plt.legend()
+plt.xlabel('Treatment value t')
+plt.ylabel(r'Derivative curve $\theta(t)$ or $\widehat{\theta}_C(t)$')
+plt.tight_layout()
+plt.savefig('./Figures/est_illust_nopos.png')
 ```
+
+<p align="center">
+<img src="https://github.com/zhangyk8/npDRDeriv/blob/main/Figures/est_illust_nopos.png" style="zoom:60%" />
+ <br><B>Fig 2. </B>Illustrative plot of bias-corrected RA, IPW, and DR estimators of the derivative of a dose-response curve without positivity.
+</p>
 
 ### Additional References
 
