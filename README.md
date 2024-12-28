@@ -102,7 +102,7 @@ More details can be found in Section 3 of our paper.
 
 ### 3. Nonparametric Inference Without the Positivity Condition
 
-Both the dose-response curve  <img src="https://latex.codecogs.com/svg.latex?&space;m(t)=\mathbb{E}\left[Y(t)\right]"/> and its derivative <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)=\frac{d}{dt}\mathbb{E}\left[Y(t)\right]"/> are unidentifiable in general when the positivity condition is violated.
+Both the dose-response curve  <img src="https://latex.codecogs.com/svg.latex?&space;m(t)=\mathbb{E}\left[Y(t)\right]"/> and its derivative <img src="https://latex.codecogs.com/svg.latex?&space;\theta(t)=\frac{d}{dt}\mathbb{E}\left[Y(t)\right]"/> are unidentifiable in general when the positivity condition is violated. To identify and estimate them, we assume an additive structure on the potential outcome <img src="https://latex.codecogs.com/svg.latex?&space;Y(t)=\bar{m}(t)+\eta(\mathbf{S})+\epsilon"/>.
 
 ### Additional References
 
