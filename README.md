@@ -7,7 +7,7 @@ This repository contains Python3 code for implementing the regression adjustment
 ### Requirements
 
 - Python >= 3.10 (earlier version might be applicable).
-- [NumPy](http://www.numpy.org/), [scikit-learn](https://scikit-learn.org/stable/), [PyTorch](https://pytorch.org/) (for neural network models and auto-differentiation, [SciPy](https://www.scipy.org/) (for some [statistical functions](https://docs.scipy.org/doc/scipy/reference/stats.html)), and [Matplotlib](https://matplotlib.org/) (for plotting).
+- [NumPy](http://www.numpy.org/), [scikit-learn](https://scikit-learn.org/stable/), [PyTorch](https://pytorch.org/) (for neural network models and auto-differentiation), [SciPy](https://www.scipy.org/) (for some [statistical functions](https://docs.scipy.org/doc/scipy/reference/stats.html)), and [Matplotlib](https://matplotlib.org/) (for plotting).
 - Optional if only use the main functions: [pandas](https://pandas.pydata.org/) and [pickle](https://docs.python.org/3/library/pickle.html).
 
 ### File Descriptions
