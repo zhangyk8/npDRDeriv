@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 @author: Yikun Zhang
-Last Editing: Dec 18, 2024
+Last Editing: Dec 30, 2024
 
 Description: Case study on the job corps program in the US (Final).
 """
@@ -12,7 +12,7 @@ import pandas as pd
 import sklearn
 
 from npDoseResponseDR import DRCurve
-from npDoseResponseDerivDR import DRDerivCurve, NeurNet
+from npDoseResponseDerivDR import DRDerivCurve, NeurNet, DRDRDerivBC
 import pickle
 
 import Supplement
@@ -72,13 +72,13 @@ theta_dr5, theta_sd5 = DRDerivCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="DR",
                                 beta_mod=NeurNet, n_iter=1000, 
                                 lr=0.1, condTS_type='reg', condTS_mod=model_nn2, 
                                 tau=0.1, L=5, h=h1, kern="epanechnikov", 
-                                h_cond=None, print_bw=True, delta=0.01)
+                                h_cond=None, print_bw=True, delta=0.01, self_norm=True)
 
 theta_dr1, theta_sd1 = DRDerivCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="DR", 
                                 beta_mod=NeurNet, n_iter=1000, 
                                 lr=0.1, condTS_type='reg', condTS_mod=model_nn2, 
                                 tau=0.001, L=1, h=h1, kern="epanechnikov", 
-                                h_cond=None, print_bw=True, delta=0.01)
+                                h_cond=None, print_bw=True, delta=0.01, self_norm=True)
 
 m_est_ra5 = DRCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="RA", mu=model_nn1, 
                     L=5, h=None, kern="epanechnikov", print_bw=False)
@@ -114,7 +114,13 @@ theta_ra1 = DRDerivCurve(Y=Y_new, X=X_dat, t_eval=t_qry, est="RA", beta_mod=Neur
 #                                 tau=0.001, L=1, h=h1, kern="epanechnikov", 
 #                                 h_cond=None, print_bw=True, bnd_cor=False, delta=0.01)
 
-    
+# theta_C_DR1, theta_C_sd1 = DRDRDerivBC(Y=Y_new, X=X_dat, t_eval=t_qry, mu=NeurNet, L=1, 
+#                                        h=h1, kern='epanechnikov', n_iter=1000, lr=0.1, 
+#                                        b=None, thres_val=0.5, self_norm=True)
+# theta_C_DR5, theta_C_sd5 = DRDRDerivBC(Y=Y_new, X=X_dat, t_eval=t_qry, mu=NeurNet, 
+#                                        L=5, h=h1, kern='epanechnikov', n_iter=1000, lr=0.1, 
+#                                        b=None, thres_val=0.5, self_norm=True)
+
 with open('./Syn_Results/Job_Corps_est_lr_'+str(0.1)+'_final1.dat', "wb") as file:
     pickle.dump([m_est_ra5, m_est_ra1, theta_ra5, theta_ra1, m_est_dr5, sd_est_dr5,\
                  m_est_dr1, sd_est_dr1, theta_dr5, theta_sd5, theta_dr1, theta_sd1], file)
