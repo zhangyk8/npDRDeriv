@@ -31,10 +31,11 @@ def CondDenTrue(Y, X):
     return res
 
 
-reg_mod_lst = ['LR', 'RF', 'NN']
+# reg_mod_lst = ['LR', 'RF', 'NN']
+reg_mod_lst = ['NN']
 cond_type = ['true', 'kde', 'reg']
-fac_lst = [0.75, 1, 1.25, 1.5, 2, 4]
-n_lst = [1000, 2000]
+fac_lst = [0.75, 1, 1.25, 1.5, 2]
+n_lst = [500, 1000, 2000, 4000, 6000]
 
 
 for reg in reg_mod_lst:

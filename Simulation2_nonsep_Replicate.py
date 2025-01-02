@@ -24,7 +24,8 @@ print(job_id)
 
 model_lst = ['knn', 'nn']
 fac_lst = [0.75, 1, 1.25, 1.5, 2, 4]
-n_lst = [1000, 2000, 10000]
+# n_lst = [1000, 2000, 10000]
+n_lst = [500, 4000, 6000]
 
 for ml in model_lst:
     for fac in fac_lst:
