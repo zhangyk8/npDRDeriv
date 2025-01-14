@@ -1,7 +1,7 @@
 # Nonparametric Doubly Robust Inference on Dose-Response Curve and its Derivative
 This repository contains Python3 code for implementing the regression adjustment (RA), inverse probability weighting (IPW), and doubly robust (DR) estimators of dose-response curve and its derivative with and without the positivity condition.
 
-- Paper Reference: Doubly Robust Inference on Causal Derivative Effects for Continuous Treatments(2025+)
+- Paper Reference: [Y. Zhang and Y.-C. Chen. Doubly Robust Inference on Causal Derivative Effects for Continuous Treatments.](https://arxiv.org/abs/2501.06969) (2025+).
 - We also provide a Python package [npDoseResponse](https://pypi.org/project/npDoseResponse/) for implementing all the estimators in the paper; see the package documentation: [https://npdoseresponse.readthedocs.io](https://npdoseresponse.readthedocs.io).
 
 ### Requirements
