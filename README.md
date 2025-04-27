@@ -235,7 +235,7 @@ plt.savefig('./Figures/est_illust_pos.png')
 </p>
 
 
-#### Dose-Response Curve Derivative Estimation Under Positivity
+#### Dose-Response Curve Derivative Estimation Without Positivity
 
 ```bash
 import numpy as np
