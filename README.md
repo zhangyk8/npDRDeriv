@@ -127,7 +127,7 @@ where <img src="https://latex.codecogs.com/svg.latex?&space;\widehat{\mu}(t,\mat
 
 More details can be found in Section 5 of our paper.
 
-### 3. Example Code
+### 4. Example Code
 
 #### Estimation of Dose-Response Curve and its Derivative Under Positivity
 
